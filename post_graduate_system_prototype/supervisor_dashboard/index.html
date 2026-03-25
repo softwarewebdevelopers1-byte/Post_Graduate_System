@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor Integrated Portal — Rongo University</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <img src="/assets/ru.png" alt="R.U logo" class="logo-img">
+      <div class="brand-sub">Supervisor Workspace</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Dashboard</div>
+    <button class="nav-item active" onclick="navigate('dashboard', this)">
+      <span class="nav-icon">📊</span> Oversight Panel
+    </button>
+    <button class="nav-item" onclick="navigate('analytics', this)" disabled>
+      <span class="nav-icon">📈</span> Workload Stats
+    </button>
+
+    <div class="nav-section-label" style="margin-top:8px;">Academic</div>
+    <button class="nav-item" onclick="navigate('presentations', this)">
+      <span class="nav-icon">📅</span> Presentations
+    </button>
+    <button class="nav-item" onclick="navigate('approvals', this)">
+      <span class="nav-icon">🛡️</span> Progress Pending
+    </button>
+    <button class="nav-item" onclick="navigate('notifications', this)">
+      <span class="nav-icon">🔔</span> Alerts Center
+    </button>
+
+    <div class="nav-section-label" style="margin-top:8px;">Administration</div>
+    <button class="nav-item" onclick="navigate('settings', this)">
+      <span class="nav-icon">⚙️</span> Settings
+    </button>
+    <button class="nav-item" style="color:var(--red);" onclick="handleLogout()">
+      <span class="nav-icon">🚪</span> Logout
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sup-avatar">S</div>
+      <div class="user-info">
+        <div class="user-name" id="sup-name">Dr. Supervisor</div>
+        <div class="user-role">Postgrad Gatekeeper</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div style="display:flex; align-items:center; gap:12px;">
+         <button class="mobile-trigger" onclick="toggleMobileNav()">☰</button>
+         <h1 id="page-title">Oversight Panel</h1>
+      </div>
+      <p id="page-sub">Academic Year 2025/2026 — R.U PGOS Hub</p>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-chip"><span class="dot"></span> Online</div>
+      <div class="topbar-chip" id="top-date">📅 19 Mar 2026</div>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+    
+    <!-- Section: Assigned Students Oversight -->
+    <section id="section-dashboard" class="section active">
+      <div class="card p-0">
+         <div class="p-8 border-b border-grey-100 flex-between">
+            <div>
+               <div class="card-title">My Registered Students</div>
+               <div class="card-sub">Assigned postgraduate candidates currently in the pipeline</div>
+            </div>
+            <div class="flex-row">
+                <input type="text" id="search-input" placeholder="Quick search..." class="form-input btn-sm" style="width:200px;">
+                <button class="btn btn-primary btn-sm">Refresh Hub</button>
+            </div>
+         </div>
+         <div id="student-table-container">
+            <div class="p-20 text-center text-muted font-bold uppercase text-xs">Awaiting data cluster sync...</div>
+         </div>
+      </div>
+    </section>
+
+    <!-- Section: Student Pipeline Deep View -->
+    <section id="section-student-detail" class="section">
+       <button class="btn btn-ghost btn-sm mb-4" onclick="navigate('dashboard')">← Return to Oversight</button>
+       <div id="student-detail-root"></div>
+    </section>
+
+    <!-- Section: Notifications -->
+    <section id="section-notifications" class="section">
+       <div id="notifications-root"></div>
+    </section>
+
+    <!-- Generic Module Section -->
+    <section id="section-generic" class="section">
+       <div class="card p-20 text-center animate-in">
+          <div class="text-[60px] mb-8 opacity-20" id="generic-icon">⚙️</div>
+          <div class="font-display text-2xl text-navy" id="generic-title">Section Title</div>
+          <p class="text-sm text-muted mt-4">Module currently synchronizing with institutional database.</p>
+       </div>
+    </section>
+
+  </div>
+</main>
+
+<div id="toast-container" style="position:fixed; bottom:24px; right:24px; z-index:1000; display:flex; flex-direction:column; gap:12px;"></div>
+
+<div id="modal-container" class="modal-overlay">
+   <div class="modal-card">
+      <div id="modal-content"></div>
+   </div>
+</div>
+
+<script type="module">
+   import { initShell, navigateTo, handleLogout } from './js/main.js';
+   window.navigate = navigateTo; // Global access like student portal
+   window.handleLogout = handleLogout;
+   
+   document.addEventListener('DOMContentLoaded', initShell);
+</script>
+</body>
+</html>

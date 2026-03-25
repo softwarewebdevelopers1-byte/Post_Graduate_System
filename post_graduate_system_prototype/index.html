@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PG Progress | Postgraduate Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css">
+    <link rel="icon" href="./assets/ru.png">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-v">
+                    <img src="/assets/ru.png" alt="R.U logo" class="logo-img">
+                  </div>
+            </a>
+            <div class="nav-links">
+                <a href="#info">System Features</a>
+                <a href="#contact">Contact Support</a>
+                <a href="./login/login.html" class="btn btn-primary">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Postgraduate Progression, Streamlined.</h1>
+            <p>A unified digital platform for Masters and PhD students. Say goodbye to manual forms, untracked timelines, and disconnected processes.</p>
+            <div class="hero-actions">
+                <a href="./login/login.html" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">Access Portal</a>
+                <a href="#info" class="btn btn-outline" style="padding: 1rem 2rem; font-size: 1.1rem;">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="info" class="info-section">
+        <div class="section-header">
+            <h2>Everything you need for academic success</h2>
+            <p>Designed specifically for the School of Post Graduate Studies to automate the entire thesis lifecycle.</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>10-Stage Pipeline Tracking</h3>
+                <p>Real-time visual progress boards ensuring students advance seamlessly from their Concept Note to Graduation Clearance.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI-Powered Corrections</h3>
+                <p>Automatically extract structured, actionable corrections categorized by urgency directly from seminar meeting transcripts.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3>Seminar Scheduling</h3>
+                <p>A unified calendar for students to request presentation slots and panels to submit digital assessment rubrics instantly.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💳</div>
+                <h3>ERP Finance Integration</h3>
+                <p>Complete multi-signature digital workflows connected directly to the university's Finance module for automated fee clearance.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonials-section">
+        <div class="section-header">
+            <h2>Trusted by the PG Community</h2>
+            <p>See how the Postgraduate Progress System is transforming the academic workflow for students, faculty, and administration.</p>
+        </div>
+        
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="quote-icon">"</div>
+                <p class="testimonial-text">Before this platform, I had to physically track down three different supervisors just to sign my quarterly reports. Now, it's a seamless multi-signature digital workflow. I always know exactly which of the 10 pipeline stages I am currently at.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">DO</div>
+                    <div class="author-info">
+                        <h4>David Ochieng</h4>
+                        <p>Masters Candidate (CJM)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="quote-icon">"</div>
+                <p class="testimonial-text">The AI-powered corrections pipeline is brilliant. It extracts structured, actionable feedback directly from our seminar transcripts, categorizing them by urgency. It saves the panel hours of typing up minutes and ensures students get their revisions instantly.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background-color: #38a169;">JO</div>
+                    <div class="author-info">
+                        <h4>Prof. James Okafor</h4>
+                        <p>Thesis Supervisor & Panelist</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="quote-icon">"</div>
+                <p class="testimonial-text">For the first time, we have a true bird's-eye view of every postgraduate student's progress. The new ERP fee clearance integration has completely eliminated the endless queues outside the Finance office for graduation clearance.</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background-color: #8b5cf6;">SK</div>
+                    <div class="author-info">
+                        <h4>Dr. Sarah Kariuki</h4>
+                        <p>Postgraduate Dean</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+  
+    <section id="contact" class="contact-section">
+        <div class="contact-container">
+            <div class="contact-info">
+                <h2>Get in touch with PG Administration</h2>
+                <p>Need assistance with your pipeline tracker or have questions regarding your graduation clearance? Our support team is here to help.</p>
+                <ul class="contact-details">
+                    <li>📍 Room 1, Postgraduate Block</li>
+                    <li>✉️ pg.support@university.ac.ke</li>
+                    <li>📞 +254 (0) 20 123 4567</li>
+                    <li>🕒 Mon - Fri, 8:00 AM - 5:00 PM</li>
+                </ul>
+            </div>
+            
+            <div class="contact-form">
+                <form onsubmit="event.preventDefault(); alert('Message sent to administration!');">
+                    <div class="form-group">
+                        <label for="name">Full Name / Reg Number</label>
+                        <input type="text" id="name" class="form-control" placeholder="e.g. Jane Doe (CJM/001/2026)" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">University Email</label>
+                        <input type="email" id="email" class="form-control" placeholder="j.doe@university.ac.ke" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">How can we help?</label>
+                        <textarea id="message" class="form-control" placeholder="Describe your issue or inquiry..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+             
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="login.html">University Portal</a>
+                <a href="login.html">Admin Login</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 Postgraduate Assessment & Progress Management System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+  
+
+</body>
+</html>

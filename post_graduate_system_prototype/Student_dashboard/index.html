@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostGrad Academic Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+    <link rel="icon"  href="../assets/ru1.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <div class="logo-v">
+        <img src="/assets/ru.png" alt="R.U logo" class="logo-img">
+      </div>
+        <div class="brand-sub">Student Profile</div>
+      </div>
+    </div>
+  </div>
+
+ <nav class="sidebar-nav">
+  <div class="nav-section-label">Dashboard</div>
+  <button class="nav-item active" onclick="navigate('profile', this)">
+    <span class="nav-icon">👤</span> My Profile
+  </button>
+  <button class="nav-item" onclick="navigate('pipeline', this)">
+    <span class="nav-icon">🔬</span> Research Progess
+  </button>
+
+  <div class="nav-section-label" style="margin-top:8px;">Academic</div>
+  <button class="nav-item" onclick="navigate('reports', this)">
+    <span class="nav-icon">📋</span> Quarterly Reports
+  </button>
+  <button class="nav-item" onclick="navigate('compliance', this)">
+    <span class="nav-icon">🛡️</span> Compliance Center
+  </button>
+  <button class="nav-item" onclick="navigate('scheduling', this)">
+    <span class="nav-icon">📅</span> Scheduling
+  </button>
+
+  <div class="nav-section-label" style="margin-top:8px;">Administration</div>
+  <button class="nav-item" onclick="navigate('finance', this)">
+    <span class="nav-icon">🏛️</span> ERP Finance
+  </button>
+
+  <!-- ADD LOGOUT BUTTON HERE -->
+  <div class="nav-section-label" style="margin-top:8px;">Account</div>
+  <button class="nav-item" id="logout-btn-sidebar" onclick="logoutUser()">
+    <span class="nav-icon">🚪</span> Logout
+  </button>
+</nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebarAvatar">EM</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarUserName">Enos Mulongo</div>
+        <div class="user-role" id="sidebarUserRole">MSc Candidate</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+
+<main class="main">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">My Profile</h1>
+      <p id="page-sub">Academic Year 2025/2026 — Semester II</p>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-chip"><span class="dot"></span> Portal Online</div>
+      <div class="topbar-chip">📅 2026-03-19</div>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+
+    <section id="section-profile" class="section active">
+      <div class="profile-hero">
+        <div class="profile-avatar-lg">E</div>
+        <div class="profile-info">
+          <div class="profile-name" id="profileName"></div>
+          <div class="profile-meta">
+            <span>📌 Reg: <span id="profileRegNo">—</span></span>
+            <span>🏛️ <span id="profileDepartment" style="display:inline">Loading...</span></span>
+            <span>📚 <span id="profileProgramme" style="display:inline">Loading...</span></span>
+          </div>
+        </div>
+        <div class="profile-status-area">
+          <span class="badge badge-active" id="status-badge">● ACTIVE</span>
+          <button class="btn btn-danger btn-sm" onclick="requestDeferral()" id="defer-btn">Request Deferral</button>
+        </div>
+      </div>
+
+      <div id="deferral-alert" style="display:none">
+        <div class="alert alert-warn">
+          <span class="alert-icon">⚠️</span>
+          <div>
+            <strong>Pipeline Tracking Paused — DEFERRED Status Active</strong><br>
+            Your research pipeline advancement is paused. All stage gate approvals are suspended until your studies are resumed.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Student Details</div>
+            <div class="card-sub">Registered academic particulars</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">✏️ Edit</button>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">Full Name</div><div class="detail-value" id="detailFullName">Enos Mulongo</div></div>
+          <div class="detail-item"><div class="detail-label">Registration No.</div><div class="detail-value" id="detailRegNo">GCA/012/2023</div></div>
+          <div class="detail-item"><div class="detail-label">Programme</div><div class="detail-value" id="detailProgramme">Master of Science</div></div>
+          <div class="detail-item"><div class="detail-label">Specialisation</div><div class="detail-value" id="detailSpecialisation">Graphics Comm. & Advertising</div></div>
+          <div class="detail-item"><div class="detail-label">School</div><div class="detail-value" id="detailSchool">Info, Comm & Media Studies</div></div>
+          <div class="detail-item"><div class="detail-label">Year of Study</div><div class="detail-value" id="detailYear">Year 3, Semester II</div></div>
+          <div class="detail-item"><div class="detail-label">Supervisor</div><div class="detail-value" id="detailSupervisor">Assigned Supervisor</div></div>
+          <div class="detail-item"><div class="detail-label">Co-Supervisor</div><div class="detail-value" id="detailCoSupervisor">Pending Allocation</div></div>
+          <div class="detail-item"><div class="detail-label">Admission Date</div><div class="detail-value" id="detailAdmission">September 2023</div></div>
+          <div class="detail-item"><div class="detail-label">Expected Completion</div><div class="detail-value" id="detailExpected">December 2027</div></div>
+          <div class="detail-item"><div class="detail-label">Mode of Study</div><div class="detail-value" id="detailMode">Full-time, On-Campus</div></div>
+          <div class="detail-item">
+            <div class="detail-label">Status</div>
+            <div class="detail-value"><span class="badge badge-active" id="status-badge-2">ACTIVE</span></div>
+          </div>
+        </div>
+        <div class="divider mt-4"></div>
+        <div class="flex-row mt-4">
+        </div>
+      </div>
+    </section>
+
+    <section id="section-pipeline" class="section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">10-Stage Research Pipeline</div>
+            <div class="card-sub">Track your postgraduate journey from proposal to graduation</div>
+          </div>
+          <div class="flex-row">
+            <span class="badge badge-active" id="pipeline-current-badge">Stage 3 — Active</span>
+          </div>
+        </div>
+
+        <div class="phase-label">Phase 1 — Foundation & Proposal (Stages 1–5)</div>
+        <div class="pipeline-track" id="pipeline-p1"></div>
+
+        <div class="divider" style="margin: 24px 0 18px;"></div>
+
+        <div class="phase-label">Phase 2 — Research & Completion (Stages 6–10)</div>
+        <div class="pipeline-track" id="pipeline-p2"></div>
+
+        <div class="pipeline-meta-row mt-4">
+          <div>
+            <div class="progress-bar" style="width:200px;">
+              <div class="progress-fill" id="pipeline-progress-fill" style="width:20%"></div>
+            </div>
+            <div class="text-sm text-muted mt-2" id="pipeline-progress-text"><strong>Stage 3 of 10</strong> — Data Collection &amp; Fieldwork</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info" id="pipeline-locked-msg" style="display:none">
+        <span class="alert-icon">🔒</span>
+        <div><strong>Pipeline Advancement Locked</strong> — Your enrolment status is DEFERRED. Gate approvals are suspended until reinstatement.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Stage Details</div>
+        <div class="detail-grid" id="stage-detail-grid">
+          <div class="detail-item"><div class="detail-label">Current Stage</div><div class="detail-value" id="sd-current">Stage 3: Data Collection</div></div>
+          <div class="detail-item"><div class="detail-label">Gate Approver</div><div class="detail-value" id="sd-approver">Supervisor + Dean of School</div></div>
+          <div class="detail-item"><div class="detail-label">Phase</div><div class="detail-value" id="sd-phase">Phase 1 — Foundation</div></div>
+          <div class="detail-item"><div class="detail-label">Next Milestone</div><div class="detail-value" id="sd-next">Submit Progress Report Q3</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-reports" class="section">
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Submit Quarterly Report</div>
+              <div class="card-sub">Q3 2025/2026 — Due 30 June 2026</div>
+            </div>
+            <span class="badge badge-pending">Due</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:13px;">
+            <div class="form-group">
+              <label class="form-label">Reporting Quarter</label>
+              <select class="form-select">
+                <option>Q3 — January to March 2026</option>
+                <option>Q2 — October to December 2025</option>
+                <option>Q1 — July to September 2025</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Research Activities Undertaken</label>
+              <textarea class="form-textarea" placeholder="Describe key research activities, design experiments, field visits…"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Challenges Encountered</label>
+              <textarea class="form-textarea" style="min-height:70px;" placeholder="Any blockers, resource gaps, ethical issues…"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Planned Activities (Next Quarter)</label>
+              <textarea class="form-textarea" style="min-height:70px;" placeholder="Outline objectives for the next reporting period…"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Attach Report (PDF, max 5MB)</label>
+              <input type="file" class="form-input" accept=".pdf" style="padding:6px 10px;">
+              <span class="form-hint">Accepted format: PDF only. Ensure the document is signed by your supervisor.</span>
+            </div>
+           <button class="btn btn-primary">📤 Submit Report</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Approval Workflow</div>
+              <div class="card-sub">Routing after submission</div>
+            </div>
+            <div class="workflow-track" id="wf-track">
+              <div class="wf-step wf-pending" id="wf-1">
+                <div class="wf-icon">👤</div>
+                <div class="wf-title">Supervisors</div>
+                <div class="wf-status" id="wf-1-s">Awaiting submission</div>
+              </div>
+              <div class="wf-step wf-pending" id="wf-2">
+                <div class="wf-icon">🏛️</div>
+                <div class="wf-title">Dean</div>
+                <div class="wf-status" id="wf-2-s">Pending</div>
+              </div>
+              <div class="wf-step wf-pending" id="wf-3">
+                <div class="wf-icon">💳</div>
+                <div class="wf-title">ERP Finance</div>
+                <div class="wf-status" id="wf-3-s">Pending</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">Submission History</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div class="flex-between" style="font-size:0.82rem; padding: 9px 12px; background:var(--green-light); border-radius:var(--radius-sm);">
+                <span>Q2 — Oct–Dec 2025</span>
+                <span class="badge badge-active" style="font-size:0.68rem;">Approved</span>
+              </div>
+              <div class="flex-between" style="font-size:0.82rem; padding: 9px 12px; background:var(--green-light); border-radius:var(--radius-sm);">
+                <span>Q1 — Jul–Sep 2025</span>
+                <span class="badge badge-active" style="font-size:0.68rem;">Approved</span>
+              </div>
+              <div class="flex-between" style="font-size:0.82rem; padding: 9px 12px; background:var(--grey-100); border-radius:var(--radius-sm);">
+                <span>Q4 — Apr–Jun 2025</span>
+                <span class="badge badge-active" style="font-size:0.68rem;">Approved</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-compliance" class="section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">NACOSTI Compliance Tracker</div>
+            <div class="card-sub">National Commission for Science, Technology & Innovation — Research Permit Uploads</div>
+          </div>
+        </div>
+        <div class="compliance-grid">
+          <div class="upload-card" id="nac-1" onclick="toggleUpload('nac-1')">
+            <div class="upload-icon">📄</div>
+            <div class="upload-title">Research Permit</div>
+            <div class="upload-status">Click to upload</div>
+          </div>
+          <div class="upload-card" id="nac-2" onclick="toggleUpload('nac-2')">
+            <div class="upload-icon">🔬</div>
+            <div class="upload-title">Ethics Clearance</div>
+            <div class="upload-status">Click to upload</div>
+          </div>
+          <div class="upload-card uploaded" id="nac-3">
+            <div class="upload-icon">✅</div>
+            <div class="upload-title">Institutional Approval</div>
+            <div class="upload-status">Uploaded — 22 Feb 2026</div>
+          </div>
+          <div class="upload-card" id="nac-4" onclick="toggleUpload('nac-4')">
+            <div class="upload-icon">🗺️</div>
+            <div class="upload-title">Site Research Permit</div>
+            <div class="upload-status">Click to upload</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border: 2px solid var(--navy);" id="boss-level-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title" style="display:flex; align-items:center; gap:10px;">
+              <span>Stage 8 Boss Level</span>
+              <span class="boss-level-badge">🏆 Thesis Submission Portal</span>
+            </div>
+            <div class="card-sub" id="boss-sub">Unlocks at Pipeline Stage 8 — Currently at Stage <span id="boss-stage-num">3</span></div>
+          </div>
+          <span id="boss-lock-icon" style="font-size:2rem;">🔒</span>
+        </div>
+
+        <div id="boss-locked-overlay" style="position:relative;">
+          <div class="alert alert-warn">
+            <span class="alert-icon">🔒</span>
+            <div>This portal is <strong>locked</strong>. You must reach <strong>Stage 8</strong> of the Research Pipeline to unlock Thesis Submission requirements. Advance your pipeline to unlock this section.</div>
+          </div>
+          <div style="opacity:0.35; pointer-events:none; margin-top:14px;">
+            <div class="compliance-grid">
+              <div class="upload-card locked-card"><div class="upload-icon">📕</div><div class="upload-title">Thesis Document</div><div class="upload-status">Locked</div></div>
+              <div class="upload-card locked-card"><div class="upload-icon">📝</div><div class="upload-title">Intent to Submit</div><div class="upload-status">Locked</div></div>
+              <div class="upload-card locked-card"><div class="upload-icon">🤝</div><div class="upload-title">Mentorship Certificate</div><div class="upload-status">Locked</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="boss-unlocked" style="display:none;">
+          <div class="alert alert-success" style="margin-bottom:14px;">
+            <span class="alert-icon">🎉</span>
+            <div><strong>Stage 8 Unlocked!</strong> You may now upload your thesis submission documents. All three items are required to proceed to Stage 9.</div>
+          </div>
+          <div class="compliance-grid">
+            <div class="upload-card" id="boss-thesis" onclick="toggleUpload('boss-thesis')">
+              <div class="upload-icon">📕</div>
+              <div class="upload-title">Thesis Document</div>
+              <div class="upload-status">Click to upload</div>
+            </div>
+            <div class="upload-card" id="boss-intent" onclick="toggleUpload('boss-intent')">
+              <div class="upload-icon">📝</div>
+              <div class="upload-title">Intent to Submit</div>
+              <div class="upload-status">Click to upload</div>
+            </div>
+            <div class="upload-card" id="boss-mentor" onclick="toggleUpload('boss-mentor')">
+              <div class="upload-icon">🤝</div>
+              <div class="upload-title">Mentorship Certificate</div>
+              <div class="upload-status">Click to upload</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-scheduling" class="section">
+      <div class="card" style="max-width: 600px; margin: 0 auto;">
+          <div class="card-header">
+            <div class="card-title">Book Presentation / Viva</div>
+            <div class="card-sub">Schedule your proposal or thesis defence</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:13px;">
+            <div class="form-group">
+              <label class="form-label">Presentation Type</label>
+              <select class="form-select">
+                <option>Proposal Defence</option>
+                <option>Progress Seminar</option>
+                <option>Pre-oral Examination</option>
+                <option>Oral Examination </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferred Date</label>
+              <input type="date" class="form-input" id="pres-date" min="2026-04-01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferred Time</label>
+              <select class="form-select">
+                <option>09:00 AM</option>
+                <option>10:00 AM</option>
+                <option>11:00 AM</option>
+                <option>02:00 PM</option>
+                <option>03:00 PM</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Venue / Mode</label>
+              <select class="form-select">
+                <option>SGS Boardroom</option>
+                <option>SGS Seminar Room B</option>
+                <option>Virtual (Zoom)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Additional Notes</label>
+              <textarea class="form-textarea" style="min-height:60px;" placeholder="Accessibility needs, special equipment, design presentation setup…"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="bookPresentation()">📅 Request Booking</button>
+          </div>
+        </div>
+    </section>
+
+    <section id="section-finance" class="section">
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Finance Clearance Status</div>
+            <div class="card-sub">ERP Student Finance — Clearance Module</div>
+          </div>
+          <div class="clearance-card clearance-pending" id="clearance-display">
+            <div class="clearance-icon">⏳</div>
+            <div class="clearance-status" style="color:var(--amber);">Clearance Pending</div>
+            <div class="clearance-message" style="color:#92400E;">
+              Clearance is pending due to an outstanding balance on your student account.
+              Please contact the Finance Office to resolve this matter before your clearance can be granted.
+            </div>
+            <div class="alert alert-error" style="width:100%; text-align:left;">
+              <span class="alert-icon">📧</span>
+              <div>Contact Finance: <a href="mailto:finance@university.edu">finance@university.edu</a> — reference your registration number when writing.</div>
+            </div>
+          </div>
+          <div class="flex-between mt-3">
+            <span class="text-sm text-muted">Toggle status for demo:</span>
+            <button class="btn btn-outline btn-sm" onclick="toggleClearance()">🔄 Simulate Clearance</button>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Account Summary</div>
+            <div class="erp-detail-row">
+              <div class="erp-stat">
+                <div class="erp-stat-label">Academic Year</div>
+                <div class="erp-stat-val">2025/2026</div>
+              </div>
+              <div class="erp-stat">
+                <div class="erp-stat-label">Clearance Status</div>
+                <div class="erp-stat-val" id="erp-status-val">⏳ Pending</div>
+              </div>
+              <div class="erp-stat">
+                <div class="erp-stat-label">Last Updated</div>
+                <div class="erp-stat-val">19 Mar 2026</div>
+              </div>
+              <div class="erp-stat">
+                <div class="erp-stat-label">Student Category</div>
+                <div class="erp-stat-val">Government-Sponsored</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">Clearance Requirements</div>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:0.84rem;">
+              <div class="flex-between" style="padding:9px 12px; background:var(--green-light); border-radius:var(--radius-sm);">
+                <span>School / Departmental Clearance</span>
+                <span class="badge badge-active" style="font-size:0.68rem;">Cleared</span>
+              </div>
+              <div class="flex-between" style="padding:9px 12px; background:var(--green-light); border-radius:var(--radius-sm);">
+                <span>Library Clearance</span>
+                <span class="badge badge-active" style="font-size:0.68rem;">Cleared</span>
+              </div>
+              <div class="flex-between" style="padding:9px 12px; background:var(--green-light); border-radius:var(--radius-sm);">
+                <span>ICT / Equipment Clearance</span>
+                <span class="badge badge-active" style="font-size:0.68rem;">Cleared</span>
+              </div>
+              <div class="flex-between" style="padding:9px 12px; background:var(--red-light); border-radius:var(--radius-sm);" id="finance-row">
+                <span>Finance Clearance</span>
+                <span class="badge badge-deferred" style="font-size:0.68rem;" id="finance-row-badge">Pending</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:8px;">Finance Office Contact</div>
+            <div class="text-sm text-muted" style="line-height:1.7;">
+              <div>📧 <a href="mailto:finance@university.edu">finance@university.edu</a></div>
+              <div>📞 +254 (067) 52181</div>
+              <div>🏢 Finance Office, Main Campus</div>
+              <div>🕐 Mon–Fri, 8:00 AM – 5:00 PM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+</script>
+
+<!-- Populate student page from localStorage.postgraduate_user (if present) -->
+<script>
+  (function () {
+    try {
+      const raw = localStorage.getItem('postgraduate_user');
+      if (!raw) return;
+      const u = JSON.parse(raw || '{}');
+      const name = u.fullName || u.userNumber || 'Student';
+      const role = u.role || '';
+
+      const setText = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = v ?? '';
+      };
+
+      // Sidebar
+      setText('sidebarUserName', name);
+      setText('sidebarUserRole', role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Candidate');
+      const sAvatar = document.getElementById('sidebarAvatar');
+      if (sAvatar) sAvatar.textContent = (name.split(' ').map(s => s[0]).slice(0,2).join('') || 'ST').toUpperCase();
+
+      // Profile hero
+      setText('profileName', name);
+      setText('profileRegNo', u.userNumber || '—');
+      setText('profileDepartment', u.department || 'Department');
+      setText('profileProgramme', u.programme || 'Programme');
+      const avatar = document.querySelector('.profile-avatar-lg');
+      if (avatar) avatar.textContent = (name[0] || 'S').toUpperCase();
+
+      // Details
+      setText('detailFullName', name);
+      setText('detailRegNo', u.userNumber || '');
+      setText('detailProgramme', u.programme || u.program || '');
+      setText('detailSpecialisation', u.specialisation || '');
+      setText('detailSchool', u.school || u.department || '');
+      setText('detailYear', u.year || u.yearOfStudy || '');
+      setText('detailSupervisor', (u.supervisor && u.supervisor.name) || u.supervisor || 'Assigned Supervisor');
+      setText('detailCoSupervisor', (u.coSupervisor && u.coSupervisor.name) || u.coSupervisor || 'Pending Allocation');
+      setText('detailAdmission', u.admissionDate || '');
+      setText('detailExpected', u.expectedCompletion || '');
+      setText('detailMode', u.mode || '');
+
+      const status = (u.status || 'Active').toString();
+      const sb1 = document.getElementById('status-badge');
+      const sb2 = document.getElementById('status-badge-2');
+      if (sb1) sb1.textContent = '● ' + status.toUpperCase();
+      if (sb2) sb2.textContent = status.toUpperCase();
+      if (status.toLowerCase() !== 'active') {
+        const def = document.getElementById('deferral-alert');
+        if (def) def.style.display = 'block';
+        const pmsg = document.getElementById('pipeline-locked-msg');
+        if (pmsg) pmsg.style.display = 'block';
+      }
+
+      // Pipeline progress
+      const stage = Number(u.stage || u.currentStage || 3) || 3;
+      const totalStages = 10;
+      const fill = document.getElementById('pipeline-progress-fill');
+      const text = document.getElementById('pipeline-progress-text');
+      const bossStageNum = document.getElementById('boss-stage-num');
+      const pipelineBadge = document.getElementById('pipeline-current-badge');
+      if (fill) fill.style.width = Math.min(100, Math.round((stage / totalStages) * 100)) + '%';
+      if (text) text.innerHTML = '<strong>Stage ' + stage + ' of ' + totalStages + '</strong> — ' + (u.stageName || 'Data Collection & Fieldwork');
+      if (bossStageNum) bossStageNum.textContent = stage;
+      if (pipelineBadge) pipelineBadge.textContent = 'Stage ' + stage + ' — ' + (u.stageName || 'Active');
+
+      // Unlock boss area if stage >= 8
+      if (stage >= 8) {
+        const bossUnlocked = document.getElementById('boss-unlocked');
+        const bossOverlay = document.getElementById('boss-locked-overlay');
+        const bossLock = document.getElementById('boss-lock-icon');
+        if (bossUnlocked) bossUnlocked.style.display = 'block';
+        if (bossOverlay) bossOverlay.style.display = 'none';
+        if (bossLock) bossLock.textContent = '🔓';
+      }
+
+      // If we have an id+token try to fetch richer student profile and update
+      if (u.id && u.token) {
+        fetch('http://localhost:5000/api/students/' + encodeURIComponent(u.id), {
+          headers: { Authorization: 'Bearer ' + u.token }
+        })
+          .then(r => (r.ok ? r.json() : null))
+          .then(student => {
+            if (!student) return;
+            if (student.fullName) setText('detailFullName', student.fullName);
+            if (student.userNumber) setText('detailRegNo', student.userNumber);
+            if (student.programme) setText('detailProgramme', student.programme);
+            if (student.department) setText('detailSchool', student.department);
+            if (student.stage) {
+              const stg = typeof student.stage === 'string' ? student.stage : String(student.stage);
+              if (pipelineBadge) pipelineBadge.textContent = stg;
+            }
+          })
+          .catch(() => {});
+      }
+    } catch (e) {
+      /* ignore errors */
+    }
+  })();
+</script>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrator — Rongo University</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">
+          <div class="container"> 
+          <div class="logo-v">
+            <img src="/assets/ru.png" alt="R.U logo" class="logo-img">
+          </div>
+          <div class="name">Admin workspace</div>
+         </div>
+        </div>
+      </div>
+      <div class="sidebar-section">Navigation</div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-view="pipeline">
+          <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Global Pipeline
+        </div>
+        <div class="nav-item" data-view="enrollment">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          Enrollment &amp; Status
+        </div>
+        <div class="nav-item" data-view="deferrals">
+          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          Deferral Tracking
+        </div>
+        <div class="nav-item" data-view="calendar">
+          <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Seminar Calendar
+        </div>
+        <div class="nav-item" data-view="nacosti">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          NACOSTI Compliance
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar">SA</div>
+          <div>
+            <div class="user-name">School Admin</div>
+            <div class="user-role">School/Dept Admin</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn" style="width:100%;margin-top:12px;color:var(--red);">
+          <svg style="width:16px;height:16px;margin-right:8px;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="topbar-title" id="topbarTitle">
+          Global Pipeline Dashboard
+        </div>
+        <div class="topbar-badge"><div class="dot-pulse"></div>School/Department Admin</div>
+        <div class="topbar-date" id="topbarDate"></div>
+      </header>
+
+      <main class="content-area">
+
+        <section class="view active" id="view-pipeline">
+          <div class="page-header">
+            <div>
+              <h1>Global Pipeline Dashboard</h1>
+              <p>Real-time overview of all postgraduate students across programmes and departments.</p>
+            </div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card c-green">
+              <div class="kpi-icon c-green">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
+              <div class="kpi-label">Total Active Students</div>
+              <div class="kpi-value">...</div>
+              <div class="kpi-sub">Total enrolled active</div>
+            </div>
+            <div class="kpi-card c-red">
+              <div class="kpi-icon c-red">
+                <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="kpi-label">Stalled / Overdue</div>
+              <div class="kpi-value">...</div>
+              <div class="kpi-sub">Stages > 90 days</div>
+            </div>
+            <div class="kpi-card c-amber">
+              <div class="kpi-icon c-amber">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              </div>
+              <div class="kpi-label">Active Deferrals</div>
+              <div class="kpi-value">...</div>
+              <div class="kpi-sub">Total on study break</div>
+            </div>
+            <div class="kpi-card c-cyan">
+              <div class="kpi-icon c-cyan">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <div class="kpi-label">Cleared Records</div>
+              <div class="kpi-value">...</div>
+              <div class="kpi-sub">All system records</div>
+            </div>
+          </div>
+
+          <div class="pipeline-layout">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div class="ct-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+                  Master Pipeline Registry
+                </div>
+                <span class="card-count" id="rowCount">Loading…</span>
+              </div>
+              <div class="filter-bar">
+                <div class="f-search">
+                  <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <input type="text" id="searchInput" placeholder="Search by name or registration number…">
+                </div>
+                <select class="f-select" id="progFilter">
+                  <option value="">All Programmes</option>
+                  <option value="PhD">PhD</option>
+                  <option value="Masters">Masters</option>
+                </select>
+                <select class="f-select" id="deptFilter">
+                  <option value="">All Departments</option>
+                  <option value="CMJ">CMJ</option>
+                  <option value="IHRS">IHRS</option>
+                </select>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Student Details</th>
+                      <th>Programme &amp; Dept</th>
+                      <th>Pipeline Stage</th>
+                      <th>Days at Stage</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pipelineBody">
+                    <tr><td colspan="6" style="padding:100px;text-align:center;color:var(--text-3);font-size:14px;">Initializing Global Pipeline Dashboard...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div class="ct-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+                  Upcoming Presentations
+                </div>
+              </div>
+              <div class="card-body">
+                <p style="padding:20px;text-align:center;color:var(--text-3);">Loading upcoming presentations…</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-enrollment">
+          <div class="page-header">
+            <div>
+              <h1>Enrollment &amp; Status Management</h1>
+              <p>Register new postgraduate students and manage existing student statuses.</p>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div class="ct-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
+                  New Student Enrollment
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-sec-title">Personal &amp; Academic Details</div>
+                <div class="form-grid" style="margin-bottom:14px;">
+                  <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" class="form-input" id="enroll-name" placeholder="e.g. Josephine Achieng Odhiambo">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Registration Number *</label>
+                    <input type="text" class="form-input" id="enroll-reg" placeholder="e.g. MIT/011/2023">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Programme *</label>
+                    <select class="form-select" id="enroll-prog">
+                      <option value="">— Select Programme —</option>
+                      <option value="PhD">Doctor of Philosophy (PhD)</option>
+                      <option value="Masters">Master of Arts / Science</option>
+                      <option value="MPhil">Master of Philosophy (MPhil)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Department *</label>
+                    <select class="form-select" id="enroll-dept">
+                      <option value="">— Select Department —</option>
+                      <option value="CMJ">CMJ</option>
+                      <option value="IHRS">IHRS</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Supervisor Name</label>
+                    <input type="text" class="form-input" id="enroll-sup" placeholder="e.g. Prof. Wanjiku Kariuki">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Enrollment Date</label>
+                    <input type="date" class="form-input" id="enroll-date">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label class="form-label">Provisional Thesis / Research Title</label>
+                  <input type="text" class="form-input" id="enroll-title" placeholder="Working title of thesis research">
+                  <span class="form-hint">Can be updated during proposal defence stage.</span>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" onclick="handleEnrollment()">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    Complete Registration
+                  </button>
+                  <button class="btn btn-outline" onclick="clearEnrollForm()">Clear Form</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div class="ct-icon"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                  Update Student Status
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="info-banner">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <p>Status changes are <strong>logged and timestamped</strong>. The student and supervisor are notified automatically upon update.</p>
+                </div>
+                <div class="form-sec-title">Find Student</div>
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label class="form-label">Search by Name or Reg No</label>
+                  <input type="text" class="form-input" id="status-search" placeholder="Type name or registration number…">
+                </div>
+                <div id="status-results" style="display:none;margin-bottom:14px;">
+                  <div style="background:var(--grey-bg);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;">
+                    <div style="font-weight:600;color:var(--navy);font-size:13.5px;" id="status-found-name">—</div>
+                    <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);margin-top:2px;" id="status-found-meta">—</div>
+                    <div style="margin-top:8px;font-size:12px;color:var(--text-2);">Current status: <span class="status active" id="status-current">ACTIVE</span></div>
+                  </div>
+                </div>
+                <div class="form-sec-title">Change Status</div>
+                <div class="form-grid" style="margin-bottom:14px;">
+                  <div class="form-group">
+                    <label class="form-label">New Status</label>
+                    <select class="form-select" id="new-status">
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="DEFERRED">DEFERRED</option>
+                      <option value="RESUMED">RESUMED</option>
+                      <option value="GRADUATED">GRADUATED</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Effective Date</label>
+                    <input type="date" class="form-input" id="status-date">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label class="form-label">Reason / Notes</label>
+                  <textarea class="form-input" rows="3" id="status-reason" placeholder="Brief reason for status change…" style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" onclick="handleStatusUpdate()">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    Apply Status Change
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-deferrals">
+          <div class="page-header">
+            <div>
+              <h1>Deferral Tracking Registry</h1>
+              <p>Active deferrals and study-break management. Track planned resumptions and process returns.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <div class="ct-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+                Active Deferrals — 5 Students
+              </div>
+              <button class="btn btn-cyan btn-sm" onclick="exportDeferrals()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Report
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student Name</th>
+                    <th>Programme &amp; Dept</th>
+                    <th>Deferral Date</th>
+                    <th>Planned Resumption</th>
+                    <th>Reason</th>
+                    <th>Frozen Stage</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text-3);">Syncing deferral registry…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-calendar">
+          <div class="page-header">
+            <div>
+              <h1>Seminar Calendar Management</h1>
+              <p>Schedule and manage available seminar slots for departmental and school-level presentations.</p>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div class="ct-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                  Add Available Slot
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-grid" style="margin-bottom:14px;">
+                  <div class="form-group">
+                    <label class="form-label">Date *</label>
+                    <input type="date" class="form-input" id="slot-date">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Seminar Level *</label>
+                    <select class="form-select" id="slot-level">
+                      <option value="Departmental">Departmental Seminar</option>
+                      <option value="School">School Seminar</option>
+                      <option value="Inter-School">Inter-School Seminar</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Start Time *</label>
+                    <input type="time" class="form-input" id="slot-start">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">End Time *</label>
+                    <input type="time" class="form-input" id="slot-end">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label class="form-label">Venue / Room</label>
+                  <input type="text" class="form-input" id="slot-venue" placeholder="e.g. Auditorium A, Boardroom 3, Zoom">
+                </div>
+                <div class="form-grid" style="margin-bottom:16px;">
+                  <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select class="form-select" id="slot-dept">
+                      <option value="CMJ">CMJ</option>
+                      <option value="IHRS">IHRS</option>
+                      <option value="Both">Both Departments</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Max Presenters</label>
+                    <input type="number" class="form-input" id="slot-max" placeholder="e.g. 3" min="1" max="10">
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" onclick="addSlot()">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Available Slot
+                  </button>
+                  <button class="btn btn-outline" onclick="clearSlotForm()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div class="ct-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+                  Scheduled Slots — Apr/May 2026
+                </div>
+              </div>
+              <div class="card-body" id="slotList">
+                <div class="slot-item">
+                  <div class="slot-date-blk"><div class="slot-day">02</div><div class="slot-mon">Apr</div></div>
+                  <div class="slot-info"><div class="slot-time">09:00 – 12:00</div><div class="slot-level">CMJ Departmental Defence</div><div class="slot-venue">CMJ · Seminar Room B</div></div>
+                  <span class="status active">Open</span>
+                </div>
+                <div class="slot-item">
+                  <div class="slot-date-blk"><div class="slot-day">09</div><div class="slot-mon">Apr</div></div>
+                  <div class="slot-info"><div class="slot-time">10:30 – 13:00</div><div class="slot-level">IHRS Departmental Defence</div><div class="slot-venue">IHRS · Auditorium A</div></div>
+                  <span class="status active">Open</span>
+                </div>
+                <div class="slot-item">
+                  <div class="slot-date-blk"><div class="slot-day">16</div><div class="slot-mon">Apr</div></div>
+                  <div class="slot-info"><div class="slot-time">14:00 – 16:30</div><div class="slot-level">School Level Defence</div><div class="slot-venue">Boardroom 1, Main Campus</div></div>
+                  <span class="status pending">1/3 Filled</span>
+                </div>
+                <div class="slot-item">
+                  <div class="slot-date-blk"><div class="slot-day">07</div><div class="slot-mon">May</div></div>
+                  <div class="slot-info"><div class="slot-time">09:00 – 11:00</div><div class="slot-level">CMJ Departmental Defence</div><div class="slot-venue">CMJ · Conference Room</div></div>
+                  <span class="status active">Open</span>
+                </div>
+                <div class="slot-item">
+                  <div class="slot-date-blk"><div class="slot-day">14</div><div class="slot-mon">May</div></div>
+                  <div class="slot-info"><div class="slot-time">10:00 – 14:00</div><div class="slot-level">IHRS Departmental Defence</div><div class="slot-venue">Graduate School Hall · Virtual</div></div>
+                  <span class="status resumed">2/4 Filled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-nacosti">
+          <div class="page-header">
+            <div>
+              <h1>NACOSTI Compliance Tracking</h1>
+              <p>Monitor research permit status for field-work candidates at Stage 5b.</p>
+            </div>
+          </div>
+          <div class="info-banner">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <p>All PhD and Masters students conducting primary field research in Kenya require a valid <strong>NACOSTI Research Permit</strong> before data collection. Desk-based or purely documentary research may be exempted via the "Mark Not Required" action.</p>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <div class="ct-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                Field Work Candidates — Stage 5b
+              </div>
+              <span class="card-count">8 students requiring review</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Programme &amp; Dept</th>
+                    <th>Stage 5 Approval Date</th>
+                    <th>NACOSTI Status</th>
+                    <th>Permit No.</th>
+                    <th>Admin Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-3);">Checking NACOSTI compliance…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
