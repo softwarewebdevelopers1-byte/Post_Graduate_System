@@ -13,6 +13,7 @@ import { studentBookings } from "./api/student.bookings.js";
 import { SeminarSlotRouter } from "./api/seminar.slots.js";
 import { reportRouter } from "./api/report.routes.js";
 import { settingsRouter } from "./api/settings.routes.js";
+import { workflowRouter } from "./api/workflow.js";
 dotenv.config();
 let app = express();
 
@@ -52,6 +53,8 @@ app.use("/api/slots", SeminarSlotRouter);
 app.use("/api", reportRouter);
 // system settings
 app.use("/api", settingsRouter);
+// workflow logic
+app.use("/api/workflow", workflowRouter);
 // handling unknown route
 app.use((req: Request, res: Response): void => {
   res.status(500).json({ message: "No route found" });
