@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quarterly Reports - Rongo University</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --sidebar-bg: #2b3e50;
+        --sidebar-hover: #1e2c3a;
+        --sidebar-active: #1c4b79;
+        --header-bg: #f4c130;
+        --main-bg: #f8f9fa;
+        --text-main: #2c3e50;
+        --text-muted: #7f8c8d;
+        --card-bg: #ffffff;
+        --primary-blue: #1c4b79;
+        --light-blue: #00a8ff;
+
+        /* Status Colors */
+        --status-approved-bg: #e8f8f5;
+        --status-approved-text: #1abc9c;
+        --status-pending-bg: #fef9e7;
+        --status-pending-text: #f39c12;
+        --status-returned-bg: #fdedec;
+        --status-returned-text: #e74c3c;
+        --status-locked-bg: #f2f4f4;
+        --status-locked-text: #7f8c8d;
+
+        /* UI Elements */
+        --border-color: #ecf0f1;
+        --input-focus: #3498db;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        display: flex;
+        height: 100vh;
+        background-color: var(--main-bg);
+        color: var(--text-main);
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background-color: var(--sidebar-bg);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+        z-index: 10;
+      }
+
+      .logo-container {
+        background-color: white;
+        padding: 25px 20px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+      }
+
+      .logo-container h2 {
+        color: var(--primary-blue);
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .logo-container p {
+        color: var(--text-muted);
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .nav-section {
+        padding: 20px 0;
+      }
+      .nav-label {
+        padding: 0 25px;
+        font-size: 11px;
+        color: #8fa0b3;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+
+      .nav-item {
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        color: #d1d8e0;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: 0.2s ease;
+        cursor: pointer;
+      }
+
+      .nav-item i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+        font-size: 16px;
+      }
+      .nav-item:hover {
+        background-color: var(--sidebar-hover);
+        color: white;
+      }
+      .nav-item.active {
+        background-color: var(--sidebar-active);
+        color: white;
+        border-left: 4px solid var(--header-bg);
+      }
+
+      .user-bottom {
+        margin-top: auto;
+        padding: 15px 20px;
+        background-color: #233444;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .user-avatar-small {
+        width: 38px;
+        height: 38px;
+        background-color: var(--light-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .user-info p {
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+      }
+      .user-info span {
+        font-size: 11px;
+        color: #8fa0b3;
+      }
+
+      /* Main Content */
+      .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .top-header {
+        background-color: var(--header-bg);
+        padding: 25px 45px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--primary-blue);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        z-index: 5;
+      }
+
+      .header-title h1 {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+      }
+      .header-title p {
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0.9;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+      }
+      .pill-dark {
+        background-color: var(--primary-blue);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .pill-dark i {
+        color: var(--header-bg);
+      }
+
+      .content-area {
+        padding: 35px 45px;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* Alert Banners */
+      .alert-banner {
+        padding: 20px 25px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        display: none;
+        align-items: flex-start;
+        gap: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      }
+
+      .alert-banner.active {
+        display: flex;
+      }
+
+      .alert-icon {
+        font-size: 24px;
+        margin-top: 2px;
+      }
+      .alert-content h4 {
+        font-size: 16px;
+        margin-bottom: 5px;
+        font-weight: 700;
+      }
+      .alert-content p {
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .alert-danger {
+        background-color: #fdedec;
+        border-left: 5px solid #e74c3c;
+        color: #c0392b;
+      }
+      .alert-danger .alert-icon {
+        color: #e74c3c;
+      }
+
+      .alert-warning {
+        background-color: #fef9e7;
+        border-left: 5px solid #f39c12;
+        color: #d68910;
+      }
+      .alert-warning .alert-icon {
+        color: #f39c12;
+      }
+
+      /* High-Fidelity Cards */
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 35px 40px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+
+      .card-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+      }
+      .card-title h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-blue);
+        margin-bottom: 6px;
+        letter-spacing: -0.3px;
+      }
+      .card-title p {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      /* Quarter Progress Bar */
+      .quarter-progress-wrapper {
+        margin-bottom: 25px;
+      }
+      .quarter-progress-bg {
+        height: 6px;
+        background: #ecf0f1;
+        border-radius: 3px;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+      .quarter-progress-fill {
+        height: 100%;
+        background: var(--primary-blue);
+        width: 25%; /* Dynamically set */
+        transition: width 0.4s ease;
+      }
+      .quarter-markers {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      /* Status Pills */
+      .status-pill {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .pill-draft {
+        background: var(--status-locked-bg);
+        color: var(--status-locked-text);
+      }
+      .pill-pending {
+        background: var(--status-pending-bg);
+        color: var(--status-pending-text);
+      }
+      .pill-approved {
+        background: var(--status-approved-bg);
+        color: var(--status-approved-text);
+      }
+      .pill-returned {
+        background: var(--status-returned-bg);
+        color: var(--status-returned-text);
+      }
+
+      /* Form Styles */
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 25px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .form-group label i {
+        color: var(--primary-blue);
+        opacity: 0.7;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text-main);
+        background: #fafbfc;
+        resize: vertical;
+        min-height: 100px;
+        transition: all 0.2s;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: var(--input-focus);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+      }
+      .form-control:disabled {
+        background: #f1f2f6;
+        cursor: not-allowed;
+        opacity: 0.8;
+      }
+
+      .btn-primary {
+        background-color: var(--primary-blue);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .btn-primary:hover {
+        background-color: #153759;
+      }
+      .btn-primary:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+      }
+
+      /* Approval & Comments Log Styles */
+      .comments-list {
+        margin-top: 10px;
+      }
+
+      .empty-log {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-muted);
+        font-style: italic;
+        background: #fafbfc;
+        border-radius: 8px;
+        border: 1px dashed #dcdde1;
+        font-size: 14px;
+      }
+
+      .comment-item {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #f1f2f6;
+      }
+
+      .comment-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .comment-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: #f1f2f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--primary-blue);
+        flex-shrink: 0;
+        border: 1px solid #dfe6e9;
+      }
+
+      .comment-body {
+        flex-grow: 1;
+      }
+
+      .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .comment-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-main);
+      }
+      .comment-time {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .comment-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        margin-left: 10px;
+        text-transform: uppercase;
+      }
+      .cb-approved {
+        background: var(--status-approved-bg);
+        color: var(--status-approved-text);
+      }
+      .cb-returned {
+        background: var(--status-returned-bg);
+        color: var(--status-returned-text);
+      }
+
+      .comment-text {
+        font-size: 14px;
+        color: var(--text-main);
+        line-height: 1.5;
+        background: #fafbfc;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #ecf0f1;
+        font-style: italic;
+      }
+
+      .comment-text.returned {
+        background: #fdfefe;
+        border-color: #fadbd8;
+        border-left: 4px solid #e74c3c;
+      }
+
+      /* Approval Chain Stepper */
+      .approval-chain {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 10px 20px 10px;
+        border-radius: 8px;
+      }
+
+      .chain-node {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        flex: 1;
+      }
+
+      /* Connecting lines */
+      .chain-node:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: calc(50% + 25px);
+        width: calc(100% - 50px);
+        height: 3px;
+        background: #dfe6e9;
+        z-index: 1;
+        transition: all 0.3s;
+      }
+
+      .chain-node.completed:not(:last-child)::after {
+        background: var(--status-approved-text);
+      }
+
+      .node-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid #dfe6e9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: #b2bec3;
+        z-index: 2;
+        position: relative;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+      }
+
+      .node-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.3;
+      }
+
+      /* Node States */
+      .chain-node.completed .node-icon {
+        background: var(--status-approved-text);
+        border-color: var(--status-approved-text);
+        color: white;
+      }
+      .chain-node.completed .node-label {
+        color: var(--text-main);
+      }
+
+      .chain-node.active .node-icon {
+        border-color: var(--status-pending-text);
+        color: var(--status-pending-text);
+        box-shadow: 0 0 0 4px var(--status-pending-bg);
+        animation: pulse 2s infinite;
+      }
+      .chain-node.active .node-label {
+        color: var(--status-pending-text);
+        font-weight: 700;
+      }
+
+      .chain-node.error .node-icon {
+        border-color: var(--status-returned-text);
+        color: var(--status-returned-text);
+        background: var(--status-returned-bg);
+      }
+      .chain-node.error .node-label {
+        color: var(--status-returned-text);
+        font-weight: 700;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(243, 156, 18, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(243, 156, 18, 0);
+        }
+      }
+
+      /* History Table */
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      .history-table th,
+      .history-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+      }
+      .history-table th {
+        background: #fafbfc;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+      }
+      .history-table tr:hover td {
+        background: #fdfdfd;
+      }
+      .btn-text {
+        color: var(--primary-blue);
+        background: none;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .btn-text:hover {
+        text-decoration: underline;
+      }
+
+      /* Hackathon Demo Tools */
+      .demo-tools {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        background: #fff;
+        border: 2px solid #34495e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+        width: 290px;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+
+      .demo-tools h4 {
+        color: #34495e;
+        margin-bottom: 15px;
+        font-size: 13px;
+        text-transform: uppercase;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+      .demo-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border: 1px solid #dcdde1;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #2c3e50;
+        cursor: pointer;
+        transition: 0.2s;
+        text-align: left;
+      }
+      .demo-btn:hover {
+        background: #ecf0f1;
+        border-color: #bdc3c7;
+      }
+      .demo-btn i {
+        width: 20px;
+        text-align: center;
+        margin-right: 5px;
+      }
+      .demo-btn.danger {
+        color: #e74c3c;
+      }
+      .demo-btn.success {
+        color: #27ae60;
+      }
+      .demo-divider {
+        height: 1px;
+        background: #eee;
+        margin: 12px 0;
+      }
+      .demo-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #eee;
+        font-size: 10px;
+        /* float: right; */
+        margin-top: 2px;
+      }
+      .demo-controls-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .demo-controls-row .demo-btn {
+        margin-bottom: 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body
+    data-sidebar-page="qr"
+    data-sidebar-tag="Masters Student"
+    data-sidebar-tag-id="sidebarProgTag"
+  >
+    <div id="appSidebar"></div>
+
+    <div class="main-content">
+      <div class="top-header">
+        <div class="header-title">
+          <h1>Quarterly Progress Reports</h1>
+          <p>Mandatory continuous assessment tracking</p>
+        </div>
+        <div class="header-actions">
+          <div class="pill-dark">
+            <i class="fas fa-circle" style="font-size: 8px"></i> Portal Online
+          </div>
+          <div class="pill-dark">
+            <i class="fas fa-calendar"></i> <span>2026-03-31</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div class="alert-banner alert-warning" id="deferralAlert">
+          <i class="fas fa-pause-circle alert-icon"></i>
+          <div class="alert-content">
+            <h4>Studies Currently Deferred</h4>
+            <p>
+              Your student status is currently set to DEFERRED. Pipeline
+              tracking and quarterly reporting requirements are paused. You
+              cannot submit reports until you officially resume your studies.
+            </p>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-danger" id="financeAlert">
+          <i class="fas fa-exclamation-triangle alert-icon"></i>
+          <div class="alert-content">
+            <h4>ERP Finance Clearance Failed</h4>
+            <p>
+              The University ERP system has flagged an outstanding fee balance
+              on your account. Your quarterly report cannot receive final
+              clearance. Please visit the Finance Office or use the ERP Finance
+              tab to resolve this issue.
+            </p>
+          </div>
+        </div>
+
+        <div class="card" id="activeReportCard">
+          <div class="card-header-flex">
+            <div class="card-title">
+              <h3 id="reportTitleDisplay">Q1 Progress Report</h3>
+              <p id="reportSubtitleDisplay">Report 1 of 4 Required</p>
+            </div>
+            <div class="status-pill pill-draft" id="reportStatusPill">
+              DRAFT
+            </div>
+          </div>
+
+          <div class="quarter-progress-wrapper">
+            <div class="quarter-progress-bg">
+              <div class="quarter-progress-fill" id="quarterProgressFill"></div>
+            </div>
+            <div class="quarter-markers" id="quarterMarkers"></div>
+          </div>
+
+          <form id="reportForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label
+                  ><i class="fas fa-tasks"></i> 1. Summary of research progress
+                  since last report</label
+                >
+                <textarea
+                  class="form-control"
+                  id="f1"
+                  placeholder="Detail your general progress..."
+                  required
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label
+                  ><i class="fas fa-bullseye"></i> 2. Objectives achieved during
+                  the quarter</label
+                >
+                <textarea
+                  class="form-control"
+                  id="f2"
+                  placeholder="List specific milestones hit..."
+                  required
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label
+                  ><i class="fas fa-exclamation-circle"></i> 3. Challenges
+                  encountered and how addressed</label
+                >
+                <textarea
+                  class="form-control"
+                  id="f3"
+                  placeholder="Identify blockers and solutions..."
+                  required
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label
+                  ><i class="fas fa-road"></i> 4. Plan for the next
+                  quarter</label
+                >
+                <textarea
+                  class="form-control"
+                  id="f4"
+                  placeholder="Outline your goals for the next phase..."
+                  required
+                ></textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="submitReportBtn">
+              <i class="fas fa-paper-plane"></i> Submit to Supervisor 1
+            </button>
+          </form>
+        </div>
+
+        <div class="card" id="approvalCard" style="display: none">
+          <div class="card-header-flex" style="margin-bottom: 25px">
+            <div class="card-title">
+              <h3>Approval Tracking & Comments</h3>
+              <p>Live status and feedback from the review panel</p>
+            </div>
+          </div>
+
+          <div
+            class="approval-chain"
+            id="approvalChainContainer"
+            style="
+              margin-bottom: 30px;
+              border-bottom: 1px solid #f1f2f6;
+              padding-bottom: 30px;
+            "
+          ></div>
+
+          <div class="comments-list" id="commentsListContainer">
+            <div class="empty-log">No comments or feedback recorded yet.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-flex" style="margin-bottom: 15px">
+            <div class="card-title">
+              <h3>Report Archive</h3>
+              <p>History of your fully signed progress reports</p>
+            </div>
+          </div>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Quarter</th>
+                <th>Submission Date</th>
+                <th>Status</th>
+                <th>Approvers</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-tools">
+      <h4><i class="fas fa-cogs"></i> Demo Controls</h4>
+
+      <button class="demo-btn" onclick="toggleProgramme()">
+        <i class="fas fa-exchange-alt"></i> Toggle Programme
+        <span class="demo-badge" id="demoProgBadge">Masters</span>
+      </button>
+      <button class="demo-btn" onclick="toggleDeferral()">
+        <i class="fas fa-pause"></i> Toggle Deferral Lock
+        <span class="demo-badge" id="demoDefBadge">Active</span>
+      </button>
+
+      <div class="demo-divider"></div>
+      <p
+        style="
+          font-size: 10px;
+          color: #7f8c8d;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          font-weight: bold;
+        "
+      >
+        Report Progress Tracking
+      </p>
+      <div class="demo-controls-row">
+        <button class="demo-btn" onclick="changeQuarter(-1)">
+          <i class="fas fa-chevron-left"></i> Prev Q
+        </button>
+        <button class="demo-btn" onclick="changeQuarter(1)">
+          Next Q <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="demo-divider"></div>
+      <p
+        style="
+          font-size: 10px;
+          color: #7f8c8d;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          font-weight: bold;
+        "
+      >
+        Workflow Simulation
+      </p>
+
+      <button
+        class="demo-btn"
+        id="demoApproveBtn"
+        onclick="simulateNextApproval()"
+      >
+        <i class="fas fa-check-circle success"></i> Simulate: Next Approval
+      </button>
+      <button class="demo-btn" id="demoReturnBtn" onclick="simulateReturn()">
+        <i class="fas fa-undo danger"></i> Simulate: Return Report
+      </button>
+      <button
+        class="demo-btn"
+        id="demoFinanceBtn"
+        onclick="simulateFinanceError()"
+      >
+        <i class="fas fa-university danger"></i> Trigger ERP Finance Error
+      </button>
+
+      <div class="demo-divider"></div>
+      <button class="demo-btn" onclick="resetDemo()">
+        <i class="fas fa-redo"></i> Reset Demo State
+      </button>
+    </div>
+
+    <script src="auth-guard.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="api.js"></script>
+    <script src="qr.js"></script>
+  </body>
+</html>

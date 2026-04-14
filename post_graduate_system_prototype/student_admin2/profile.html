@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Profile - Rongo University</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --sidebar-bg: #2b3e50;
+        --sidebar-hover: #1e2c3a;
+        --sidebar-active: #1c4b79;
+        --header-bg: #f4c130;
+        --main-bg: #f4f6f9;
+        --text-main: #333333;
+        --text-muted: #888888;
+        --card-bg: #ffffff;
+        --primary-blue: #1c4b79;
+
+        /* Status Pill Colors */
+        --pill-active: #d1f2eb;
+        --pill-active-text: #117a65;
+        --pill-pending: #fef9e7;
+        --pill-pending-text: #d4ac0d;
+        --pill-deferred: #ebedef;
+        --pill-deferred-text: #7f8c8d;
+
+        /* Button Colors */
+        --btn-red: #e74c3c;
+        --btn-red-hover: #c0392b;
+        --btn-grey: #95a5a6;
+        --btn-green: #2ecc71;
+        --btn-green-hover: #27ae60;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        display: flex;
+        height: 100vh;
+        background-color: var(--main-bg);
+        color: var(--text-main);
+      }
+
+      /* Sidebar Styles */
+      .sidebar {
+        width: 250px;
+        background-color: var(--sidebar-bg);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+
+      .logo-container {
+        background-color: white;
+        padding: 20px;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .logo-container h2 {
+        color: var(--primary-blue);
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+
+      .logo-container p {
+        color: var(--text-muted);
+        font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .nav-section {
+        padding: 15px 0;
+      }
+
+      .nav-label {
+        padding: 0 20px;
+        font-size: 11px;
+        color: #8fa0b3;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+      }
+
+      .nav-item {
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        color: #d1d8e0;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.2s;
+        cursor: pointer;
+      }
+
+      .nav-item i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+      }
+
+      .nav-item:hover {
+        background-color: var(--sidebar-hover);
+        color: white;
+      }
+
+      .nav-item.active {
+        background-color: var(--sidebar-active);
+        color: white;
+        border-left: 4px solid var(--header-bg);
+      }
+
+      .user-bottom {
+        margin-top: auto;
+        padding: 15px 20px;
+        background-color: #233444;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .user-avatar-small {
+        width: 35px;
+        height: 35px;
+        background-color: #00a8ff;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .user-info p {
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .user-info span {
+        font-size: 11px;
+        color: #8fa0b3;
+      }
+
+      /* Main Content Styles */
+      .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      /* Top Header */
+      .top-header {
+        background-color: var(--header-bg);
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--primary-blue);
+      }
+
+      .header-title h1 {
+        font-size: 24px;
+        margin-bottom: 5px;
+      }
+
+      .header-title p {
+        font-size: 14px;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .pill-dark {
+        background-color: var(--primary-blue);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pill-dark i {
+        color: var(--header-bg);
+      }
+
+      /* Page Content */
+      .content-area {
+        padding: 30px 40px;
+      }
+
+      /* Profile Banner */
+      .profile-banner {
+        background: linear-gradient(to right, #2b3e50 70%, #3a536b);
+        border-radius: 10px;
+        padding: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .banner-left {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+      }
+
+      .banner-avatar {
+        width: 80px;
+        height: 80px;
+        background-color: #00a8ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        font-weight: bold;
+        border: 3px solid white;
+      }
+
+      .banner-details h2 {
+        color: var(--header-bg);
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .banner-meta {
+        display: flex;
+        gap: 20px;
+        font-size: 14px;
+      }
+
+      .banner-meta span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .banner-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 15px;
+      }
+
+      /* Dynamic Status Pills */
+      .status-pill {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+      }
+
+      .status-pill::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      /* State Classes applied to AppBody */
+      .state-active .status-pill {
+        background-color: var(--pill-active);
+        color: var(--pill-active-text);
+      }
+      .state-active .status-pill::before {
+        background-color: var(--pill-active-text);
+      }
+
+      .state-pending .status-pill {
+        background-color: var(--pill-pending);
+        color: var(--pill-pending-text);
+      }
+      .state-pending .status-pill::before {
+        background-color: var(--pill-pending-text);
+      }
+
+      .state-deferred .status-pill {
+        background-color: var(--pill-deferred);
+        color: var(--pill-deferred-text);
+      }
+      .state-deferred .status-pill::before {
+        background-color: var(--pill-deferred-text);
+      }
+
+      /* Dynamic Action Button */
+      .btn-action {
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-red {
+        background-color: var(--btn-red);
+      }
+      .btn-red:hover {
+        background-color: var(--btn-red-hover);
+      }
+
+      .btn-green {
+        background-color: var(--btn-green);
+      }
+      .btn-green:hover {
+        background-color: var(--btn-green-hover);
+      }
+
+      .btn-disabled {
+        background-color: var(--btn-grey) !important;
+        cursor: not-allowed;
+        opacity: 0.8;
+      }
+
+      /* Details Card */
+      .details-card {
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+      }
+
+      .card-title h3 {
+        font-size: 18px;
+        color: var(--primary-blue);
+        margin-bottom: 5px;
+      }
+
+      .card-title p {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .btn-edit {
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s;
+      }
+
+      .btn-edit:hover {
+        background-color: #f9f9f9;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+        row-gap: 30px;
+        transition: all 0.3s ease;
+      }
+
+      .info-item label {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .info-item .val-container {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-main);
+        min-height: 24px;
+      }
+
+      .info-item input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .info-item input:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+      }
+
+      /* Supervisor 3 Animation */
+      #sup3Container {
+        display: none;
+        animation: fadeIn 0.4s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Modals */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.3s;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-content {
+        background-color: white;
+        width: 450px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        transform: translateY(-20px);
+        transition: 0.3s;
+      }
+
+      .modal-overlay.active .modal-content {
+        transform: translateY(0);
+      }
+
+      .modal-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h3 {
+        color: var(--primary-blue);
+        font-size: 18px;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+
+      .modal-body {
+        padding: 25px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 8px;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 14px;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      .btn-outline {
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: var(--primary-blue);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #153759;
+      }
+
+      /* Hackathon Demo Tools - Floating Panel */
+      .demo-tools {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #fff;
+        border: 2px dashed #e74c3c;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        width: 250px;
+      }
+
+      .demo-tools h4 {
+        color: #e74c3c;
+        margin-bottom: 10px;
+        font-size: 12px;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .demo-btn {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .demo-btn:hover {
+        background: #e9ecef;
+      }
+
+      .demo-divider {
+        height: 1px;
+        background: #ddd;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body
+    data-sidebar-page="profile"
+    data-sidebar-tag="Student"
+  >
+    <div id="appSidebar"></div>
+
+    <div class="main-content">
+      <div class="top-header">
+        <div class="header-title">
+          <h1>My Profile</h1>
+          <p>Student academic particulars & status</p>
+        </div>
+        <div class="header-actions">
+          <div class="pill-dark">
+            <i class="fas fa-circle" style="font-size: 8px"></i> Portal Online
+          </div>
+          <div class="pill-dark">
+            <i class="fas fa-calendar"></i>
+            <span id="currentDate">2026-03-30</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div class="profile-banner">
+          <div class="banner-left">
+            <div class="banner-avatar">E</div>
+            <div class="banner-details">
+              <h2 id="studentNameHeading">Enos Mulongo</h2>
+              <div class="banner-meta">
+                <span id="studentRegMeta"><i class="fas fa-id-card"></i> Reg: MIT/011/2022</span>
+                <span id="studentDeptMeta"><i class="fas fa-university"></i> cmj</span>
+                <span id="bannerProgDisplay"
+                  ><i class="fas fa-graduation-cap"></i> masters</span
+                >
+              </div>
+            </div>
+          </div>
+          <div class="banner-right">
+            <div class="status-pill" id="mainStatusPill">ACTIVE</div>
+            <button class="btn-action" id="mainActionBtn">
+              Request Deferral
+            </button>
+          </div>
+        </div>
+
+        <div class="details-card">
+          <div class="card-header">
+            <div class="card-title">
+              <h3>Student Details</h3>
+              <p>Registered academic particulars</p>
+            </div>
+            <button class="btn-edit" id="editBtn">
+              <i class="fas fa-pencil-alt"></i> <span>Edit</span>
+            </button>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Full Name</label>
+              <div class="val-container editable" id="studentNameValue">Enos Mulongo</div>
+            </div>
+            <div class="info-item">
+              <label>Registration No.</label>
+              <div class="val-container editable" id="studentRegValue">MIT/011/2022</div>
+            </div>
+            <div class="info-item">
+              <label>Programme</label>
+              <div class="val-container editable" id="progDisplay">Masters</div>
+            </div>
+            <div class="info-item">
+              <label>Specialisation</label>
+              <div class="val-container editable">-</div>
+            </div>
+            <div class="info-item">
+              <label>School</label>
+              <div class="val-container editable" id="studentDepartmentValue">cmj</div>
+            </div>
+            <div class="info-item">
+              <label>Year of Study</label>
+              <div class="val-container editable" id="studentYearValue">Year 2</div>
+            </div>
+            <div class="info-item">
+              <label>Mentor</label>
+              <div class="val-container editable" id="mentorValue">Pending Allocation</div>
+            </div>
+            <div class="info-item">
+              <label>Supervisor 1</label>
+              <div class="val-container editable" id="supervisor1Value">Prof. James Odhiambo</div>
+              <div class="meta-mini" id="supervisor1StatusValue">PENDING</div>
+            </div>
+            <div class="info-item">
+              <label>Supervisor 2</label>
+              <div class="val-container editable" id="supervisor2Value">Dr. Sarah Kemboi</div>
+              <div class="meta-mini" id="supervisor2StatusValue">PENDING</div>
+            </div>
+
+            <div class="info-item" id="sup3Container">
+              <label>Supervisor 3</label>
+              <div class="val-container editable" id="supervisor3Value">Pending Allocation</div>
+            </div>
+            <div class="info-item">
+              <label>Mentorship Status</label>
+              <div class="val-container editable" id="mentorshipStatusValue">PENDING</div>
+            </div>
+
+            <div class="info-item">
+              <label>Admission Date</label>
+              <div class="val-container editable">2024-09-01</div>
+            </div>
+            <div class="info-item">
+              <label>Mode of Study</label>
+              <div class="val-container editable">Full-Time</div>
+            </div>
+            <div class="info-item">
+              <label>Status</label>
+              <div class="val-container">
+                <span
+                  class="status-pill"
+                  id="gridStatusPill"
+                  style="display: inline-flex"
+                  >ACTIVE</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="deferralModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Request Deferral</h3>
+          <button
+            type="button"
+            class="close-btn"
+            onclick="closeModal('deferralModal')"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="deferralForm">
+            <div class="form-group">
+              <label>Reason for Deferral</label>
+              <select class="form-control" id="deferralReason" required>
+                <option value="">Select a reason...</option>
+                <option value="health">Health</option>
+                <option value="financial">Financial</option>
+                <option value="personal">Personal</option>
+                <option value="work">Work-related</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Planned Resumption Semester/Date</label>
+              <input
+                type="month"
+                class="form-control"
+                id="deferralResumptionDate"
+                required
+              />
+            </div>
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="btn-outline"
+                onclick="closeModal('deferralModal')"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">Submit Request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="resumptionModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Request Resumption</h3>
+          <button
+            type="button"
+            class="close-btn"
+            onclick="closeModal('resumptionModal')"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="resumptionForm">
+            <p
+              style="
+                font-size: 14px;
+                margin-bottom: 20px;
+                color: var(--text-muted);
+              "
+            >
+              Submitting this form notifies the PG office of your return. Your
+              timeline and reporting schedule will be recalculated.
+            </p>
+            <div class="form-group">
+              <label>Resumption Date</label>
+              <input
+                type="date"
+                class="form-control"
+                id="resumptionDate"
+                required
+              />
+            </div>
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="btn-outline"
+                onclick="closeModal('resumptionModal')"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">Submit Return</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-tools" id="demoTools">
+      <h4><i class="fas fa-cogs"></i> Demo Controls</h4>
+
+      <button
+        class="demo-btn"
+        id="toggleProgrammeBtn"
+        onclick="toggleProgramme()"
+      >
+        Switch to PhD Profile
+      </button>
+
+      <div class="demo-divider"></div>
+
+      <button class="demo-btn" onclick="simulateAdminApproval('DEFERRED')">
+        Simulate: Supervisor Approves Deferral
+      </button>
+      <button class="demo-btn" onclick="simulateAdminApproval('ACTIVE')">
+        Simulate: Supervisor Approves Resumption
+      </button>
+      <button class="demo-btn" onclick="resetState()">
+        Reset Status to Active
+      </button>
+    </div>
+
+    <script src="auth-guard.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="api.js"></script>
+    <script src="profile.js"></script>
+  </body>
+</html>

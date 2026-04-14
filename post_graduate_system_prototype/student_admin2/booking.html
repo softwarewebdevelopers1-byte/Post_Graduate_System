@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scheduling & Booking - Rongo University</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --sidebar-bg: #2b3e50;
+        --sidebar-hover: #1e2c3a;
+        --sidebar-active: #1c4b79;
+        --header-bg: #f4c130;
+        --main-bg: #f8f9fa;
+        --text-main: #2c3e50;
+        --text-muted: #7f8c8d;
+        --card-bg: #ffffff;
+        --primary-blue: #1c4b79;
+        --light-blue: #00a8ff;
+
+        /* Status Colors */
+        --status-approved-bg: #e8f8f5;
+        --status-approved-text: #1abc9c;
+        --status-pending-bg: #fef9e7;
+        --status-pending-text: #f39c12;
+        --status-retracted-bg: #fee2e2;
+        --status-retracted-text: #e74c3c;
+
+        /* UI Elements */
+        --border-color: #ecf0f1;
+        --input-focus: #3498db;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      body {
+        display: flex;
+        height: 100vh;
+        background-color: var(--main-bg);
+        color: var(--text-main);
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background-color: var(--sidebar-bg);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+        z-index: 10;
+      }
+      .logo-container {
+        background-color: white;
+        padding: 25px 20px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+      }
+      .logo-container h2 {
+        color: var(--primary-blue);
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .logo-container p {
+        color: var(--text-muted);
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .nav-section {
+        padding: 20px 0;
+      }
+      .nav-label {
+        padding: 0 25px;
+        font-size: 11px;
+        color: #8fa0b3;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+      .nav-item {
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        color: #d1d8e0;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: 0.2s ease;
+        cursor: pointer;
+      }
+      .nav-item i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+        font-size: 16px;
+      }
+      .nav-item:hover {
+        background-color: var(--sidebar-hover);
+        color: white;
+      }
+      .nav-item.active {
+        background-color: var(--sidebar-active);
+        color: white;
+        border-left: 4px solid var(--header-bg);
+      }
+      .user-bottom {
+        margin-top: auto;
+        padding: 15px 20px;
+        background-color: #233444;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .user-avatar-small {
+        width: 38px;
+        height: 38px;
+        background-color: var(--light-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .user-info p {
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+      }
+      .user-info span {
+        font-size: 11px;
+        color: #8fa0b3;
+      }
+
+      /* Main Content */
+      .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .top-header {
+        background-color: var(--header-bg);
+        padding: 25px 45px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--primary-blue);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        z-index: 5;
+      }
+      .header-title h1 {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+      }
+      .header-title p {
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0.9;
+      }
+      .header-actions {
+        display: flex;
+        gap: 12px;
+      }
+      .pill-dark {
+        background-color: var(--primary-blue);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .content-area {
+        padding: 35px 45px;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* Information Banner */
+      .info-banner {
+        background-color: #eaf2f8;
+        border-left: 5px solid var(--primary-blue);
+        padding: 20px 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 15px;
+      }
+      .info-banner i {
+        color: var(--primary-blue);
+        font-size: 24px;
+        margin-top: 2px;
+      }
+      .info-content h4 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--primary-blue);
+        margin-bottom: 6px;
+      }
+      .info-content p {
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text-main);
+      }
+      .info-content ul {
+        margin-top: 8px;
+        margin-left: 20px;
+        font-size: 13px;
+        color: var(--text-main);
+      }
+      .info-content li {
+        margin-bottom: 4px;
+      }
+
+      /* Cards */
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 35px 40px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+      .card-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 25px;
+      }
+      .card-title h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-blue);
+        margin-bottom: 6px;
+      }
+      .card-title p {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      /* Smart Booking Engine Layout */
+      .booking-layout {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 40px;
+      }
+
+      /* Slot Selection */
+      .slots-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .slot-card {
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        background: #fafbfc;
+      }
+      .slot-card:hover:not(.disabled) {
+        border-color: #bdc3c7;
+      }
+      .slot-card.selected {
+        border-color: var(--primary-blue);
+        background: #f0f8ff;
+        box-shadow: 0 4px 15px rgba(28, 75, 121, 0.1);
+      }
+      .slot-card.selected::after {
+        content: "\f058";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        color: var(--primary-blue);
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 20px;
+      }
+
+      /* 7-Day Disabled Slot Styles */
+      .slot-card.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: #f1f2f6;
+        border-color: #dfe4ea;
+      }
+      .slot-card.disabled .slot-date {
+        color: #7f8c8d;
+      }
+      .slot-tag-closed {
+        background: var(--status-retracted-bg);
+        color: var(--status-retracted-text);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: bold;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        text-transform: uppercase;
+      }
+
+      .slot-date {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--primary-blue);
+        margin-bottom: 5px;
+        transition: color 0.2s;
+      }
+      .slot-type {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 10px;
+      }
+      .slot-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .slot-meta span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .slot-meta .capacity {
+        color: #27ae60;
+        font-weight: 600;
+        background: #e8f8f5;
+        padding: 3px 8px;
+        border-radius: 12px;
+      }
+
+      /* Auto-filled Form */
+      .booking-form {
+        background: #fafbfc;
+        padding: 25px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+      }
+      .form-row {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px dashed #dfe6e9;
+      }
+      .form-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+      .form-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+        display: block;
+      }
+      .form-val {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .form-val.highlight {
+        color: var(--primary-blue);
+      }
+      .form-input-text {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 13px;
+      }
+
+      .btn-primary {
+        background-color: var(--primary-blue);
+        color: white;
+        border: none;
+        padding: 14px 25px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background-color: #153759;
+      }
+      .btn-primary:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+      }
+
+      /* Retract Button */
+      .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        margin-left: 10px;
+        text-transform: uppercase;
+      }
+      .btn-danger:hover {
+        background-color: #c0392b;
+      }
+
+      /* Success Message */
+      .success-overlay {
+        display: none;
+        background: #e8f8f5;
+        border: 1px solid #1abc9c;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        animation: fadeIn 0.4s ease;
+      }
+      .success-overlay.active {
+        display: flex;
+      }
+      .success-overlay i {
+        font-size: 40px;
+        color: #1abc9c;
+      }
+      .success-overlay h4 {
+        font-size: 18px;
+        color: #16a085;
+      }
+      .success-overlay p {
+        font-size: 13px;
+        color: var(--text-main);
+        line-height: 1.5;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* History Table */
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .history-table th,
+      .history-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+        vertical-align: middle;
+      }
+      .history-table th {
+        background: #fafbfc;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+      }
+      .history-table tr:hover td {
+        background: #fdfdfd;
+      }
+      .status-pill {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: inline-block;
+      }
+      .pill-pending {
+        background: var(--status-pending-bg);
+        color: var(--status-pending-text);
+      }
+      .pill-approved {
+        background: var(--status-approved-bg);
+        color: var(--status-approved-text);
+      }
+      .pill-retracted {
+        background: var(--status-retracted-bg);
+        color: var(--status-retracted-text);
+      }
+
+      /* Demo Tools */
+      .demo-tools {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        background: #fff;
+        border: 2px solid #34495e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+        width: 280px;
+      }
+      .demo-tools h4 {
+        color: #34495e;
+        margin-bottom: 15px;
+        font-size: 13px;
+        text-transform: uppercase;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+      .demo-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border: 1px solid #dcdde1;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #2c3e50;
+        cursor: pointer;
+        transition: 0.2s;
+        text-align: left;
+      }
+      .demo-btn:hover {
+        background: #ecf0f1;
+        border-color: #bdc3c7;
+      }
+      .demo-btn i {
+        width: 20px;
+        text-align: center;
+        margin-right: 5px;
+      }
+      .demo-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #eee;
+        font-size: 10px;
+        float: right;
+        margin-top: 2px;
+      }
+      .demo-divider {
+        height: 1px;
+        background: #eee;
+        margin: 12px 0;
+      }
+    </style>
+  </head>
+  <body
+    data-sidebar-page="booking"
+    data-sidebar-tag="CJM Department"
+    data-sidebar-tag-id="sidebarDeptTag"
+  >
+    <div id="appSidebar"></div>
+
+    <div class="main-content">
+      <div class="top-header">
+        <div class="header-title">
+          <h1>Seminar Scheduling & Booking</h1>
+          <p>Automated presentation slot allocation</p>
+        </div>
+        <div class="header-actions">
+          <div class="pill-dark">
+            <i class="fas fa-circle" style="font-size: 8px"></i> Portal Online
+          </div>
+          <div class="pill-dark">
+            <i class="fas fa-calendar"></i>
+            <span id="currentDateDisplay">2026-04-01</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div class="info-banner">
+          <i class="fas fa-info-circle"></i>
+          <div class="info-content">
+            <h4>University Seminar Scheduling Rules</h4>
+            <p>
+              Seminar slots published by the admin are shown here based on your
+              department. A slot remains bookable until it is filled or the
+              admin closes the window.
+            </p>
+            <ul>
+              <li><strong>Open:</strong> Students can submit a booking request.</li>
+              <li><strong>Full:</strong> The slot has reached the admin-set student capacity.</li>
+              <li><strong>Window Closed:</strong> The admin has closed the slot.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" id="bookingCard">
+          <div class="card-header-flex">
+            <div class="card-title">
+              <h3>Smart Booking Engine</h3>
+              <p>
+                Select an open slot below. Closed slots show as
+                <strong>Window Closed</strong> and full slots stop accepting new
+                students.
+              </p>
+            </div>
+          </div>
+
+          <div class="booking-layout">
+            <div class="slots-container" id="slotsContainer"></div>
+
+            <div class="booking-form-wrapper">
+              <div class="booking-form" id="requestForm">
+                <h4
+                  style="
+                    margin-bottom: 20px;
+                    color: var(--primary-blue);
+                    font-size: 15px;
+                    border-bottom: 2px solid var(--primary-blue);
+                    padding-bottom: 8px;
+                    display: inline-block;
+                  "
+                >
+                  Booking Request Details
+                </h4>
+
+                <div class="form-row">
+                  <span class="form-label">Requested Date</span>
+                  <span class="form-val highlight" id="formDateDisplay"
+                    >Select a slot...</span
+                  >
+                </div>
+
+                <div class="form-row">
+                  <span class="form-label">Presentation Type</span>
+                  <span class="form-val" id="formTypeDisplay"
+                    >Stage 3: Departmental Proposal</span
+                  >
+                </div>
+
+                <div class="form-row">
+                  <span class="form-label">Research Topic</span>
+                  <textarea
+                    id="researchTopicInput"
+                    class="form-input-text"
+                    rows="3"
+                    placeholder="Enter your research topic"
+                  ></textarea>
+                </div>
+
+                <div class="form-row">
+                  <span class="form-label"
+                    >Assigned Supervisors
+                    <span id="supervisorCountLabel"
+                      >(Masters: System Auto-filled)</span
+                    ></span
+                  >
+                  <div id="supervisorInputsContainer"></div>
+                </div>
+
+                <button
+                  class="btn-primary"
+                  id="confirmBookingBtn"
+                  disabled
+                  onclick="submitBooking()"
+                >
+                  <i class="fas fa-calendar-check"></i> Submit Booking Request
+                </button>
+              </div>
+
+              <div class="success-overlay" id="successOverlay">
+                <i class="fas fa-check-circle"></i>
+                <h4>Booking Request Submitted!</h4>
+                <p>
+                  Your request has been routed to the Head of Department for
+                  final approval.
+                </p>
+                <div
+                  style="
+                    text-align: left;
+                    background: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    width: 100%;
+                    margin-top: 10px;
+                    border: 1px solid #bdc3c7;
+                  "
+                >
+                  <span
+                    style="
+                      font-size: 11px;
+                      font-weight: bold;
+                      color: var(--text-muted);
+                      text-transform: uppercase;
+                    "
+                    >Automated Notifications Sent To:</span
+                  >
+                  <ul
+                    style="
+                      font-size: 13px;
+                      margin-top: 8px;
+                      margin-left: 20px;
+                      color: var(--text-main);
+                    "
+                  >
+                    <li>Supervisors</li>
+                    <li id="notificationTarget">Head of CJM Department</li>
+                    <li>Departmental Panel Members</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-flex" style="margin-bottom: 15px">
+            <div class="card-title">
+              <h3>My Bookings & History</h3>
+              <p>
+                Track your pending requests and previous seminar bookings.
+              </p>
+            </div>
+          </div>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Presentation Stage</th>
+                <th>Venue / Link</th>
+                <th>Status & Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-tools" style="display: none">
+      <h4><i class="fas fa-cogs"></i> Context Controls</h4>
+
+      <button class="demo-btn" onclick="toggleDept()">
+        <i class="fas fa-building"></i> Toggle Department
+        <span class="demo-badge" id="demoDeptBadge">CJM</span>
+      </button>
+      <button class="demo-btn" onclick="toggleLevel()">
+        <i class="fas fa-layer-group"></i> Toggle Pipeline Level
+        <span class="demo-badge" id="demoLevelBadge">Dept</span>
+      </button>
+      <button class="demo-btn" onclick="toggleDegree()">
+        <i class="fas fa-graduation-cap"></i> Toggle Degree
+        <span class="demo-badge" id="demoDegreeBadge">Masters</span>
+      </button>
+
+      <div class="demo-divider"></div>
+      <p
+        style="
+          font-size: 10px;
+          color: #7f8c8d;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          font-weight: bold;
+        "
+      >
+        Workflow Simulation
+      </p>
+
+      <button
+        class="demo-btn"
+        id="demoApproveBtn"
+        onclick="simulateHoDApproval()"
+        disabled
+      >
+        <i class="fas fa-check-double"></i> Simulate: HoD Approves Slot
+      </button>
+
+      <div class="demo-divider"></div>
+      <button class="demo-btn" onclick="resetDemo()">
+        <i class="fas fa-redo"></i> Reset Demo State
+      </button>
+    </div>
+
+    <script src="auth-guard.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="api.js"></script>
+    <script src="booking.js"></script>
+  </body>
+</html>

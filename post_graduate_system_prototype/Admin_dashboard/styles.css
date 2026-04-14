@@ -310,11 +310,13 @@ ul {
 
 /* ─── TOPBAR ────────────────────────────────────────────────────── */
 .topbar {
-  height: 115px;
+  min-height: 115px;
   background: #ffc000;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
+  align-content: center;
+  flex-wrap: wrap;
   padding: 0 46px;
   gap: 14px;
   flex-shrink: 0;
@@ -326,6 +328,7 @@ ul {
   font-weight: 700;
   color: var(--navy);
   flex: 1;
+  min-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -372,6 +375,38 @@ ul {
   font-size: 11px;
   color: var(--navy-dark);
   white-space: nowrap;
+}
+.topbar-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 14px;
+  padding: 8px 12px;
+  min-width: 260px;
+  max-width: 420px;
+  color: #9a3412;
+  flex: 1 1 320px;
+}
+.topbar-notification strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.topbar-notification span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #c2410c;
+}
+.notif-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
+  flex-shrink: 0;
 }
 
 /* ─── CONTENT ───────────────────────────────────────────────────── */

@@ -1,27 +1,37 @@
-/* ═══════════════════════════════════════════════════════════════════ */
-/* CONFIG & STATE                                                     */
-/* ═══════════════════════════════════════════════════════════════════ */
 const API_URL = 'http://localhost:5000/api';
 let students = [];
+let editingStudentId = null;
 
 const STAGES = [
-    "Application",
-    "Concept Note",
-    "Proposal",
-    "Research Progress",
-    "Thesis Submission",
-    "Defense",
-    "Graduation",
+    "Coursework",
+    "Concept Note (Department)",
+    "Concept Note (School)",
+    "Proposal (Department)",
+    "Proposal (School)",
+    "PG School Approval",
+    "Fieldwork / NACOSTI",
+    "Thesis Draft (Department)",
+    "Thesis Draft (School)",
+    "External Examination Submission",
+    "Under External Examination",
+    "Final Defence",
+    "Graduation Clearance",
 ];
 
 const stageMap = {
-    'Application': 'Stage 1 - Application',
-    'Concept Note': 'Stage 2 - Concept Note Booking & Submission',
-    'Proposal': 'Stage 3 - Proposal Development & Approval',
-    'Research Progress': 'Stage 4 - Research Progress Tracking',
-    'Thesis Submission': 'Stage 5 - Thesis Submission',
-    'Defense': 'Stage 6 - Defense (Viva)',
-    'Graduation': 'Stage 7 - Graduation Clearance'
+    'Coursework': 'Stage 1 — Registration & Induction',
+    'Concept Note (Department)': 'Stage 2 — Concept Paper (Dept)',
+    'Concept Note (School)': 'Stage 3 — Concept Paper (School)',
+    'Proposal (Department)': 'Stage 4 — Proposal Defence (Dept)',
+    'Proposal (School)': 'Stage 5 — Proposal Defence (School)',
+    'PG School Approval': 'Stage 6 — PG Approval & Clearance',
+    'Fieldwork / NACOSTI': 'Stage 7 — NACOSTI & Field Work',
+    'Thesis Draft (Department)': 'Stage 8 — Thesis Writing (Dept)',
+    'Thesis Draft (School)': 'Stage 9 — Thesis Writing (School)',
+    'External Examination Submission': 'Stage 10 — External Submission',
+    'Under External Examination': 'Stage 11 — External Review',
+    'Final Defence': 'Stage 12 — Viva Voce / Defense',
+    'Graduation Clearance': 'Stage 13 — Graduation Clearance'
 };
 
 const titles = {
@@ -29,6 +39,7 @@ const titles = {
     enrollment:'Enrollment & Status Management',
     deferrals:'Deferral Tracking Registry',
     calendar:'Seminar Calendar Management',
+    bookings:'Presentation Booking Review',
     nacosti:'NACOSTI Compliance Tracking'
 };
 
@@ -55,11 +66,17 @@ async function fetchStudents() {
             id: s.userNumber.toUpperCase(),
             prog: s.programme === 'phd' ? 'PhD' : (s.programme === 'masters' ? 'Masters' : s.programme),
             dept: s.department.toUpperCase(),
-            stage: s.stage || 'Application',
+            year: s.year || '',
+            mentor: s.mentor || '',
+            stage: s.stage || 'Coursework',
             full: stageMap[s.stage] || s.stage || 'Stage 1 — Registration & Induction',
             days: calculateDays(s.updatedAt || s.createdAt),
             status: (s.status || 'Active').toLowerCase(),
-            nacosti: (s.documents?.nacosti || 'pending').toLowerCase()
+            nacosti: (s.documents?.nacosti || 'pending').toLowerCase(),
+            supervisor: s.supervisors?.sup1 || '',
+            supervisor2: s.supervisors?.sup2 || '',
+            assignmentStatus: s.assignmentStatus || {},
+            mentorship: s.documents?.mentorship || 'pending'
         }));
         renderAll();
         updateKPICards();
@@ -74,10 +91,29 @@ async function fetchPresentations() {
         const res = await fetch(`${API_URL}/presentations/admin/all`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to fetch presentations');
         const data = await res.json();
-        renderPresentations(data.bookings);
+        renderSlotReminderNotification(data.slotReminders || []);
+        renderPresentations(data.bookings, data.slotReminders || []);
     } catch (err) {
         console.error('Presentations error:', err);
     }
+}
+
+function renderSlotReminderNotification(slotReminders = []) {
+    const notification = document.getElementById('slotReminderNotification');
+    const count = document.getElementById('slotReminderCount');
+    const text = document.getElementById('slotReminderText');
+    if (!notification || !count || !text) return;
+
+    if (!slotReminders.length) {
+        notification.style.display = 'none';
+        return;
+    }
+
+    const latestReminder = slotReminders[0];
+    notification.style.display = 'flex';
+    count.textContent = `${slotReminders.length} active slot reminder${slotReminders.length === 1 ? '' : 's'}`;
+    text.textContent = `${latestReminder.fullName} requested a slot for ${latestReminder.department}`;
+    notification.title = `${latestReminder.fullName} (${latestReminder.owner}) requested a slot for ${latestReminder.department}. ${latestReminder.message || ''}`.trim();
 }
 
 async function fetchCalendarSlots() {
@@ -109,9 +145,9 @@ function updateKPICards() {
     if (cards[3]) cards[3].querySelector('.kpi-value').textContent = totalCleared;
 }
 
-  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  */
   /* PIPELINE TABLE RENDER                                              */
-  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  */
   function dayClass(days, status) {
     if (status === 'deferred' || status === 'graduated') return '';
     if (days > 90) return 'crit';
@@ -124,11 +160,13 @@ function updateKPICards() {
     return `<tr data-name="${s.name.toLowerCase()}" data-id="${s.id.toLowerCase()}" data-prog="${s.prog}" data-dept="${s.dept}">
       <td><div class="s-name">${s.name}</div><div class="s-id">${s.id}</div></td>
       <td><span class="prog-pill ${s.prog==='PhD'?'phd':'msc'}">${s.prog}</span><div class="dept-tag">${s.dept}</div></td>
+      <td><span style="font-family:var(--font-mono);font-size:12px;">${s.year || '—'}</span></td>
       <td><span class="stage-badge">${s.stage}</span><div style="font-size:10.5px;color:var(--text-3);margin-top:2px;">${s.full}</div></td>
       <td><span class="days-val ${dc}">${s.days}d</span></td>
       <td><span class="status ${s.status}">${s.status.toUpperCase()}</span></td>
       <td><div class="btn-gap">
         <button class="btn btn-ghost btn-sm" onclick="viewProfile('${s._id}', '${s.id}')">View</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s._id}')">Edit</button>
         <button class="btn btn-outline btn-sm" onclick="advanceStage('${s._id}', '${s.name.replace(/'/g,"\\'")}')">Advance</button>
       </div></td>
     </tr>`;
@@ -200,7 +238,7 @@ function updateKPICards() {
       const list = document.querySelector('.pipeline-layout .card:last-child .card-body');
       if (!list) return;
       
-      const upcoming = bookings.filter(b => b.status === 'pending' || b.status === 'approved').slice(0, 5);
+      const upcoming = bookings.filter(b => ['pending', 'approved', 'confirmed'].includes(b.status)).slice(0, 5);
       if (upcoming.length === 0) {
           list.innerHTML = '<p style="padding:20px;text-align:center;color:var(--text-3);">No upcoming presentations scheduled.</p>';
           return;
@@ -209,16 +247,126 @@ function updateKPICards() {
       list.innerHTML = upcoming.map(b => {
         const student = students.find(s => s.id === b.owner.toUpperCase());
         const dispName = student ? student.name : b.owner;
+        const isPending = b.status === 'pending';
+        const statusTone = (b.status === 'approved' || b.status === 'confirmed') ? 'ok' : 'pend';
+        const topicHtml = b.additionalNotes
+          ? `<div style="font-size:12px;color:var(--text-2);margin-top:6px;">Topic: ${b.additionalNotes}</div>`
+          : '';
+        const actionsHtml = isPending
+          ? `<div class="btn-gap" style="margin-top:10px;">
+                <button class="btn btn-success btn-sm" onclick="reviewBooking('${b._id}', 'approve')">Approve</button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="reviewBooking('${b._id}', 'reject')">Reject</button>
+             </div>`
+          : '';
         return `
           <div class="pres-item">
             <div class="pres-date">${b.preferredDate} · ${b.preferredTime}</div>
             <div class="pres-student">${dispName}</div>
             <div class="pres-meta"><span>${b.presentationType}</span><span>${b.venue}</span></div>
-            <div class="pres-panel"><div class="panel-dot ${b.status==='approved'?'ok':'pend'}"></div><span class="panel-label">Status: ${b.status.toUpperCase()}</span></div>
+            ${topicHtml}
+            <div class="pres-panel"><div class="panel-dot ${statusTone}"></div><span class="panel-label">Status: ${b.status.toUpperCase()}</span></div>
+            ${actionsHtml}
           </div>
         `;
       }).join('');
   }
+
+  function renderPresentationSummary(bookings) {
+      const list = document.getElementById('dashboardPresentationSummary');
+      if (!list) return;
+
+      const upcoming = bookings.filter(b => ['pending', 'approved', 'confirmed'].includes(b.status)).slice(0, 5);
+      if (upcoming.length === 0) {
+          list.innerHTML = '<p style="padding:20px;text-align:center;color:var(--text-3);">No upcoming presentations scheduled.</p>';
+          return;
+      }
+
+      list.innerHTML = upcoming.map(b => {
+        const student = students.find(s => s.id === b.owner.toUpperCase());
+        const dispName = student ? student.name : b.owner;
+        const statusTone = (b.status === 'approved' || b.status === 'confirmed') ? 'ok' : 'pend';
+        return `
+          <div class="pres-item">
+            <div class="pres-date">${b.preferredDate} · ${b.preferredTime}</div>
+            <div class="pres-student">${dispName}</div>
+            <div class="pres-meta"><span>${b.presentationType}</span><span>${b.venue}</span></div>
+            <div class="pres-panel"><div class="panel-dot ${statusTone}"></div><span class="panel-label">Status: ${b.status.toUpperCase()}</span></div>
+          </div>
+        `;
+      }).join('');
+  }
+
+  function renderBookingReviewPage(bookings, slotReminders = []) {
+      const list = document.getElementById('bookingReviewList');
+      const countEl = document.getElementById('bookingCount');
+      if (!list) return;
+
+      const reviewable = bookings.filter(b => ['pending', 'approved', 'confirmed', 'rejected', 'cancelled'].includes(b.status));
+      if (countEl) countEl.textContent = `${reviewable.length} bookings · ${slotReminders.length} slot reminders`;
+
+      const reminderCards = slotReminders.map(reminder => `
+        <div class="pres-item" style="margin-bottom:14px;border-left:4px solid #f59e0b;">
+          <div class="pres-date">Slot Reminder · ${new Date(reminder.createdAt).toLocaleString()}</div>
+          <div class="pres-student">${reminder.fullName}</div>
+          <div class="pres-meta"><span>${reminder.programme}</span><span>${reminder.department}</span></div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:6px;">Student ID: ${reminder.owner}</div>
+          <div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fdba74;font-size:12px;color:#9a3412;">
+            <strong>Requested:</strong> ${reminder.message}
+            <div style="margin-top:4px;color:#c2410c;">Expires: ${new Date(reminder.expiresAt).toLocaleString()}</div>
+          </div>
+        </div>
+      `).join('');
+
+      if (reviewable.length === 0 && slotReminders.length === 0) {
+          list.innerHTML = '<p style="padding:20px;text-align:center;color:var(--text-3);">No booking requests found.</p>';
+          return;
+      }
+
+      const bookingCards = reviewable.map(b => {
+        const student = students.find(s => s.id === b.owner.toUpperCase());
+        const dispName = student ? student.name : b.owner;
+        const isPending = b.status === 'pending';
+        const statusTone = (b.status === 'approved' || b.status === 'confirmed') ? 'ok' : (b.status === 'rejected' || b.status === 'cancelled' ? 'crit' : 'pend');
+        const topicHtml = b.additionalNotes
+          ? `<div style="font-size:12px;color:var(--text-2);margin-top:6px;">Topic: ${b.additionalNotes}</div>`
+          : '<div style="font-size:12px;color:var(--text-3);margin-top:6px;">Topic: Not provided</div>';
+        const actionsHtml = isPending
+          ? `<div class="btn-gap" style="margin-top:10px;">
+                <button class="btn btn-success btn-sm" onclick="reviewBooking('${b._id}', 'approve')">Approve</button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="reviewBooking('${b._id}', 'reject')">Reject</button>
+             </div>`
+          : '';
+        const reminderHtml = b.reminderRequestedAt
+          ? `<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fdba74;font-size:12px;color:#9a3412;">
+               <strong>Student Reminder:</strong> ${b.reminderMessage || 'Student requested admin follow-up for this booking.'}
+               <div style="margin-top:4px;color:#c2410c;">Sent: ${new Date(b.reminderRequestedAt).toLocaleString()}</div>
+             </div>`
+          : '';
+        const reasonHtml = b.cancellationReason
+          ? `<div style="font-size:12px;color:var(--red);margin-top:6px;">Reason: ${b.cancellationReason}</div>`
+          : '';
+        return `
+          <div class="pres-item" style="margin-bottom:14px;">
+            <div class="pres-date">${b.preferredDate} · ${b.preferredTime}</div>
+            <div class="pres-student">${dispName}</div>
+            <div class="pres-meta"><span>${b.presentationType}</span><span>${b.venue}</span></div>
+            ${topicHtml}
+            <div style="font-size:12px;color:var(--text-2);margin-top:6px;">Requested: ${new Date(b.createdAt).toLocaleString()}</div>
+            <div class="pres-panel"><div class="panel-dot ${statusTone}"></div><span class="panel-label">Status: ${b.status.toUpperCase()}</span></div>
+            ${reminderHtml}
+            ${reasonHtml}
+            ${actionsHtml}
+          </div>
+        `;
+      }).join('');
+
+      list.innerHTML = `${reminderCards}${bookingCards}`;
+  }
+
+  renderPresentations = function(bookings, slotReminders = []) {
+      renderPresentationSummary(bookings);
+      renderBookingReviewPage(bookings, slotReminders);
+  };
 
   function renderSlots(slots) {
       const list = document.getElementById('slotList');
@@ -233,7 +381,9 @@ function updateKPICards() {
           const mon = d.toLocaleString('default', {month:'short'});
           const filled = s.presenters.length;
           const statusCls = s.status === 'Open' ? 'active' : (s.status === 'Full' ? 'resumed' : 'deferred');
-          const statusLab = s.status === 'Open' ? 'Open' : (s.status === 'Full' ? `${filled}/${s.maxPresenters} Filled` : 'Closed');
+          const statusLab = s.status === 'Open'
+            ? `${filled}/${s.maxPresenters} Booked`
+            : (s.status === 'Full' ? `${filled}/${s.maxPresenters} Filled` : 'Closed');
           
           return `
             <div class="slot-item">
@@ -305,9 +455,9 @@ function updateKPICards() {
     document.body.removeChild(a);
   }
 
-  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  */
   /* FORM HANDLERS                                                      */
-  /* ═══════════════════════════════════════════════════════════════════ */
+  /*  */
   async function handleEnrollment() {
     const name = document.getElementById('enroll-name').value.trim();
     const reg  = document.getElementById('enroll-reg').value.trim();
@@ -457,6 +607,7 @@ function updateKPICards() {
     try {
         const res = await fetch(`${API_URL}/slots/admin/create`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date, startTime: start, endTime: end, level, venue, department: dept, maxPresenters: max
@@ -468,7 +619,7 @@ function updateKPICards() {
 
   async function toggleSlotStatus(id) {
       try {
-          const res = await fetch(`${API_URL}/slots/${id}/status`, { method: 'PATCH' });
+          const res = await fetch(`${API_URL}/slots/${id}/status`, { method: 'PATCH', credentials: 'include' });
           if (res.ok) { fetchCalendarSlots(); }
       } catch (err) { console.error(err); }
   }
@@ -476,9 +627,37 @@ function updateKPICards() {
   async function deleteSlot(id) {
     if (confirm('Permanently delete this seminar slot?')) {
         try {
-            const res = await fetch(`${API_URL}/slots/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_URL}/slots/${id}`, { method: 'DELETE', credentials: 'include' });
             if (res.ok) { fetchCalendarSlots(); }
         } catch (err) { console.error(err); }
+    }
+  }
+
+  async function reviewBooking(id, action) {
+    const isApprove = action === 'approve';
+    let reason = '';
+
+    if (!isApprove) {
+        reason = prompt('Reason for rejecting this booking:', 'Rejected by admin') || '';
+        if (!reason.trim()) return;
+    }
+
+    if (!confirm(`Are you sure you want to ${isApprove ? 'approve' : 'reject'} this booking request?`)) return;
+
+    try {
+        const res = await fetch(`${API_URL}/presentations/admin/${id}/review`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, reason })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'Failed to review booking');
+        alert(isApprove ? '✅ Booking approved.' : '✅ Booking rejected.');
+        fetchPresentations();
+        fetchCalendarSlots();
+    } catch (err) {
+        alert(`❌ ${err.message || 'Error reviewing booking.'}`);
     }
   }
 
@@ -491,8 +670,18 @@ function updateKPICards() {
   async function handleLogout() {
       try {
           await fetch(`${API_URL}/user/login/logout`, { method: 'POST', credentials: 'include' });
-          window.location.href = '../login/login.html';
-      } catch (err) { window.location.href = '../login/login.html'; }
+      } catch (err) {
+          console.error('Logout failed:', err);
+      } finally {
+          localStorage.removeItem('postgraduate_user');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('userToken');
+          sessionStorage.removeItem('postgraduate_user');
+          sessionStorage.removeItem('auth_token');
+          sessionStorage.removeItem('userToken');
+          sessionStorage.clear();
+          window.location.replace('../login/login.html');
+      }
   }
 
   const lib = document.getElementById('logoutBtn');
@@ -523,9 +712,95 @@ function updateKPICards() {
     const el = document.getElementById('topbarDate');
     if (el) el.textContent = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
   })();
+
+  async function handleEnrollment() {
+    const name = document.getElementById('enroll-name').value.trim();
+    const reg  = document.getElementById('enroll-reg').value.trim();
+    const prog = document.getElementById('enroll-prog').value;
+    const dept = document.getElementById('enroll-dept').value;
+    const year = document.getElementById('enroll-year').value.trim();
+    const mentor = document.getElementById('enroll-mentor').value.trim();
+    const supervisor = document.getElementById('enroll-sup').value.trim();
+    const supervisor2 = document.getElementById('enroll-sup2').value.trim();
+    if (!name || !reg || !prog || !dept || !year) { alert('Fields required.'); return; }
+
+    try {
+        const res = await fetch(editingStudentId ? `${API_URL}/students/${editingStudentId}` : `${API_URL}/user/signUp`, {
+            method: editingStudentId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fullName: name,
+                userNumber: reg,
+                password: 'student123',
+                programme: prog.toLowerCase(),
+                department: dept.toLowerCase(),
+                role: 'student',
+                year,
+                mentor,
+                supervisor,
+                supervisor2,
+                supervisors: { sup1: supervisor }
+            })
+        });
+        if (res.ok) {
+            alert(editingStudentId ? 'Student details updated!' : 'Student Enrolled!');
+            clearEnrollForm();
+            fetchStudents();
+        } else {
+            const err = await res.json();
+            alert(err.message || 'Request failed');
+        }
+    } catch (err) {
+        alert('Network error.');
+    }
+  }
+
+  function clearEnrollForm() {
+    ['enroll-name','enroll-reg','enroll-year','enroll-mentor','enroll-sup','enroll-sup2','enroll-date','enroll-title'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('enroll-prog').value = '';
+    document.getElementById('enroll-dept').value = '';
+    editingStudentId = null;
+    const actionLabel = document.getElementById('enrollActionLabel');
+    if (actionLabel) actionLabel.textContent = 'Complete Registration';
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+  }
+
+  function editStudent(id) {
+    const student = students.find(s => s._id === id);
+    if (!student) return;
+
+    editingStudentId = id;
+    document.getElementById('enroll-name').value = student.name || '';
+    document.getElementById('enroll-reg').value = student.id || '';
+    document.getElementById('enroll-prog').value = student.prog || '';
+    document.getElementById('enroll-dept').value = student.dept || '';
+    document.getElementById('enroll-year').value = student.year || '';
+    document.getElementById('enroll-mentor').value = student.mentor || '';
+    document.getElementById('enroll-sup').value = student.supervisor || '';
+    document.getElementById('enroll-sup2').value = student.supervisor2 || '';
+
+    const actionLabel = document.getElementById('enrollActionLabel');
+    if (actionLabel) actionLabel.textContent = 'Update Student Details';
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+    document.getElementById('view-enrollment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function cancelEditStudent() {
+    clearEnrollForm();
+  }
+
+  function viewProfile(dbId, regNo) {
+      const s = students.find(x => x._id === dbId);
+      if (!s) return;
+      alert(`STUDENT PROFILE: ${s.name}\n\nRegistration: ${s.id}\nProgramme: ${s.prog}\nDepartment: ${s.dept}\nYear: ${s.year || 'Not set'}\nMentor: ${s.mentor || 'Not assigned'}\nMentorship Status: ${String(s.mentorship || 'pending').toUpperCase()}\nSupervisor 1: ${s.supervisor || 'Not assigned'} (${String(s.assignmentStatus?.sup1 || 'pending').toUpperCase()})\nSupervisor 2: ${s.supervisor2 || 'Not assigned'} (${String(s.assignmentStatus?.sup2 || 'pending').toUpperCase()})\nCurrent Stage: ${s.stage}\nDays at Stage: ${s.days}d\nNACOSTI Status: ${s.nacosti.toUpperCase()}`);
+  }
   
   /* INIT */
   checkAuth();
   fetchStudents();
+  fetchPresentations();
   fetchCalendarSlots();
-

@@ -43,6 +43,10 @@
           <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
           Seminar Calendar
         </div>
+        <div class="nav-item" data-view="bookings">
+          <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
+          Presentation Bookings
+        </div>
         <div class="nav-item" data-view="nacosti">
           <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
           NACOSTI Compliance
@@ -67,6 +71,13 @@
       <header class="topbar">
         <div class="topbar-title" id="topbarTitle">
           Global Pipeline Dashboard
+        </div>
+        <div class="topbar-notification" id="slotReminderNotification" style="display:none;">
+          <div class="notif-dot"></div>
+          <div>
+            <strong id="slotReminderCount">0 slot reminders</strong>
+            <span id="slotReminderText">No active slot reminders</span>
+          </div>
         </div>
         <div class="topbar-badge"><div class="dot-pulse"></div>School/Department Admin</div>
         <div class="topbar-date" id="topbarDate"></div>
@@ -148,6 +159,7 @@
                     <tr>
                       <th>Student Details</th>
                       <th>Programme &amp; Dept</th>
+                      <th>Year</th>
                       <th>Pipeline Stage</th>
                       <th>Days at Stage</th>
                       <th>Status</th>
@@ -155,7 +167,7 @@
                     </tr>
                   </thead>
                   <tbody id="pipelineBody">
-                    <tr><td colspan="6" style="padding:100px;text-align:center;color:var(--text-3);font-size:14px;">Initializing Global Pipeline Dashboard...</td></tr>
+                    <tr><td colspan="7" style="padding:100px;text-align:center;color:var(--text-3);font-size:14px;">Initializing Global Pipeline Dashboard...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -169,7 +181,9 @@
                 </div>
               </div>
               <div class="card-body">
+                <div id="dashboardPresentationSummary">
                 <p style="padding:20px;text-align:center;color:var(--text-3);">Loading upcoming presentations…</p>
+                </div>
               </div>
             </div>
           </div>
@@ -219,8 +233,20 @@
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Supervisor Name</label>
+                    <label class="form-label">Year *</label>
+                    <input type="text" class="form-input" id="enroll-year" placeholder="e.g. Year 1 or 2026">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Mentor Name</label>
+                    <input type="text" class="form-input" id="enroll-mentor" placeholder="e.g. Dr. Jane Mentor">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Supervisor 1</label>
                     <input type="text" class="form-input" id="enroll-sup" placeholder="e.g. Prof. Wanjiku Kariuki">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Supervisor 2</label>
+                    <input type="text" class="form-input" id="enroll-sup2" placeholder="e.g. Dr. Sarah Kemboi">
                   </div>
                   <div class="form-group">
                     <label class="form-label">Enrollment Date</label>
@@ -235,8 +261,9 @@
                 <div class="form-actions">
                   <button class="btn btn-primary" onclick="handleEnrollment()">
                     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                    Complete Registration
+                    <span id="enrollActionLabel">Complete Registration</span>
                   </button>
+                  <button class="btn btn-outline" id="cancelEditBtn" onclick="cancelEditStudent()" style="display:none;">Cancel Edit</button>
                   <button class="btn btn-outline" onclick="clearEnrollForm()">Clear Form</button>
                 </div>
               </div>
@@ -436,6 +463,27 @@
                   <span class="status resumed">2/4 Filled</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-bookings">
+          <div class="page-header">
+            <div>
+              <h1>Presentation Booking Review</h1>
+              <p>Review, approve, and reject seminar booking requests submitted by students.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <div class="ct-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h8"/><path d="M8 18h5"/></svg></div>
+                Student Booking Requests
+              </div>
+              <span class="card-count" id="bookingCount">Loading…</span>
+            </div>
+            <div class="card-body" id="bookingReviewList">
+              <p style="padding:20px;text-align:center;color:var(--text-3);">Loading booking requests…</p>
             </div>
           </div>
         </section>

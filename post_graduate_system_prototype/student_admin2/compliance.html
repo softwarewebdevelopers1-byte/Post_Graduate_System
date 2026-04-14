@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compliance Center - Rongo University</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --sidebar-bg: #2b3e50;
+        --sidebar-hover: #1e2c3a;
+        --sidebar-active: #1c4b79;
+        --header-bg: #f4c130;
+        --main-bg: #f8f9fa;
+        --text-main: #2c3e50;
+        --text-muted: #7f8c8d;
+        --card-bg: #ffffff;
+        --primary-blue: #1c4b79;
+        --light-blue: #00a8ff;
+        --success: #1abc9c;
+        --warning: #f39c12;
+        --status-approved-bg: #e8f8f5;
+        --status-approved-text: #1abc9c;
+        --status-pending-bg: #fef9e7;
+        --status-pending-text: #f39c12;
+        --status-missing-bg: #fdedec;
+        --status-missing-text: #e74c3c;
+        --status-review-bg: #eaf2f8;
+        --status-review-text: #3498db;
+        --border-color: #ecf0f1;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        display: flex;
+        height: 100vh;
+        overflow-x: hidden;
+        overflow-y: hidden;
+        background-color: var(--main-bg);
+        color: var(--text-main);
+      }
+
+      .sidebar {
+        width: 250px;
+        background-color: var(--sidebar-bg);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+        z-index: 10;
+      }
+
+      .logo-container {
+        background-color: white;
+        padding: 25px 20px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+      }
+
+      .logo-container h2 {
+        color: var(--primary-blue);
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .logo-container p {
+        color: var(--text-muted);
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .nav-section {
+        padding: 20px 0;
+      }
+
+      .nav-label {
+        padding: 0 25px;
+        font-size: 11px;
+        color: #8fa0b3;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+
+      .nav-item {
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        color: #d1d8e0;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: 0.2s ease;
+        cursor: pointer;
+      }
+
+      .nav-item i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+        font-size: 16px;
+      }
+
+      .nav-item:hover {
+        background-color: var(--sidebar-hover);
+        color: white;
+      }
+
+      .nav-item.active {
+        background-color: var(--sidebar-active);
+        color: white;
+        border-left: 4px solid var(--header-bg);
+      }
+
+      .user-bottom {
+        margin-top: auto;
+        padding: 15px 20px;
+        background-color: #233444;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .user-avatar-small {
+        width: 38px;
+        height: 38px;
+        background-color: var(--light-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .user-info p {
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+      }
+
+      .user-info span {
+        font-size: 11px;
+        color: #8fa0b3;
+      }
+
+      .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .top-header {
+        background-color: var(--header-bg);
+        padding: 25px 45px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--primary-blue);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        z-index: 5;
+      }
+
+      .header-title h1 {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+      }
+
+      .header-title p {
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0.9;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .pill-dark {
+        background-color: var(--primary-blue);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .content-area {
+        padding: 35px 45px;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+        padding-bottom: 48px;
+      }
+
+      .info-banner {
+        background-color: #fef9e7;
+        border-left: 5px solid var(--status-pending-text);
+        padding: 20px 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .info-banner i {
+        color: var(--status-pending-text);
+        font-size: 24px;
+      }
+
+      .info-content h4 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 4px;
+      }
+
+      .info-content p {
+        font-size: 13px;
+        color: var(--text-main);
+      }
+
+      .info-content strong {
+        color: var(--status-missing-text);
+      }
+
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 30px 40px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+
+      .card-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 15px;
+      }
+
+      .card-title h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary-blue);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+
+      .card-title p {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .badge-missing {
+        background-color: var(--status-missing-bg);
+        color: var(--status-missing-text);
+      }
+
+      .badge-review {
+        background-color: var(--status-review-bg);
+        color: var(--status-review-text);
+      }
+
+      .badge-approved {
+        background-color: var(--status-approved-bg);
+        color: var(--status-approved-text);
+      }
+
+      .upload-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 30px;
+      }
+
+      .upload-desc {
+        flex: 1;
+      }
+
+      .upload-desc p {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 15px;
+      }
+
+      .upload-box {
+        flex: 1;
+        border: 2px dashed #bdc3c7;
+        border-radius: 8px;
+        padding: 30px 20px;
+        text-align: center;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .upload-box:hover:not(.disabled) {
+        border-color: var(--primary-blue);
+        background-color: #f0f8ff;
+        cursor: pointer;
+      }
+
+      .upload-box.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        border-color: #ecf0f1;
+      }
+
+      .upload-icon {
+        font-size: 30px;
+        color: #95a5a6;
+        margin-bottom: 10px;
+        transition: color 0.3s ease;
+      }
+
+      .upload-box:hover:not(.disabled) .upload-icon {
+        color: var(--primary-blue);
+      }
+
+      .upload-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 5px;
+      }
+
+      .upload-subtext {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .file-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        display: block;
+      }
+
+      .file-display {
+        display: none;
+        background-color: #f8f9fa;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 12px 15px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 15px;
+      }
+
+      .file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .file-info i {
+        color: var(--status-missing-text);
+        font-size: 18px;
+      }
+
+      .file-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .file-size {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .btn-remove {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .btn-remove:hover {
+        color: var(--status-missing-text);
+      }
+
+      .card-actions {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn-secondary {
+        background-color: #eef2f7;
+        color: var(--primary-blue);
+        border: 1px solid #d6dee8;
+        padding: 11px 18px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .btn-secondary:disabled,
+      .btn-primary:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      .history-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .history-table th,
+      .history-table td {
+        text-align: left;
+        padding: 14px 10px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
+        vertical-align: top;
+      }
+
+      .history-table th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+      }
+
+      .history-link {
+        color: var(--primary-blue);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .history-link:hover {
+        text-decoration: underline;
+      }
+
+      .empty-row {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 18px 10px;
+      }
+
+      .action-feedback {
+        display: none;
+        margin-bottom: 20px;
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .action-feedback.show {
+        display: block;
+      }
+
+      .action-feedback.success {
+        background: var(--status-approved-bg);
+        color: var(--status-approved-text);
+        border: 1px solid #bfe9df;
+      }
+
+      .action-feedback.error {
+        background: var(--status-missing-bg);
+        color: var(--status-missing-text);
+        border: 1px solid #f5c6cb;
+      }
+
+      .action-feedback.info {
+        background: var(--status-review-bg);
+        color: var(--status-review-text);
+        border: 1px solid #cfe3f6;
+      }
+
+      .upload-box.is-loading {
+        pointer-events: none;
+        opacity: 0.75;
+        border-color: var(--primary-blue);
+        background-color: #f0f8ff;
+      }
+
+      @media (max-width: 960px) {
+        body {
+          flex-direction: column;
+        }
+
+        .top-header {
+          padding: 20px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .content-area {
+          padding: 20px;
+        }
+
+        .upload-container {
+          flex-direction: column;
+        }
+      }
+
+              /* NEW: Intent to Submit Form Styles */
+              .form-section { margin-bottom: 25px; }
+              .form-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--primary-blue); margin-bottom: 15px; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+              
+              .intent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #fafbfc; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+              .info-block { display: flex; flex-direction: column; gap: 4px; }
+              .info-block.wide { grid-column: span 2; }
+              .info-block label { font-size: 11px; font-weight: 700; color: #95a5a6; text-transform: uppercase; }
+              .info-block div { font-size: 14px; font-weight: 600; color: var(--text-main); }
+              
+              .form-instruction { font-size: 13px; color: var(--text-muted); margin-bottom: 15px; }
+              .form-group label { font-size: 12px; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 6px; }
+              .form-input { padding: 10px 12px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 14px; width: 100%; transition: border-color 0.2s; }
+              .form-input:focus { border-color: var(--primary-blue); outline: none; }
+              .form-input:disabled { opacity: 0.6; cursor: not-allowed; background: #f1f2f6; }
+              
+              .checkbox-group { display: flex; align-items: flex-start; gap: 12px; background: #f0f8ff; border: 1px solid #cce5ff; padding: 15px; border-radius: 6px; }
+              .checkbox-group label { font-size: 13px; color: var(--primary-blue); font-weight: 600; line-height: 1.4; cursor: pointer; }
+              .custom-checkbox { width: 18px; height: 18px; margin-top: 2px; cursor: pointer; }
+              
+              .mt-15 { margin-top: 15px; } .mt-20 { margin-top: 20px; }
+      
+    </style>
+  </head>
+  <body data-sidebar-page="compliance" data-sidebar-tag="Student">
+    <div id="appSidebar"></div>
+
+    <div class="main-content">
+      <div class="top-header">
+        <div class="header-title">
+          <h1>Compliance Center</h1>
+          <p>Document Submission & Regulatory Clearances</p>
+        </div>
+        <div class="header-actions">
+          <div class="pill-dark" id="erpStatusPill">
+            <i class="fas fa-check-circle" style="color: #1abc9c"></i> ERP:
+            Cleared
+          </div>
+          <div class="pill-dark">
+            <i class="fas fa-calendar"></i>
+            <span id="currentDateDisplay"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div class="info-banner" id="erpWarningBanner" style="display: none">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div class="info-content">
+            <h4>Compliance Temporarily Paused</h4>
+            <p>
+              Your account is currently deferred. New document submissions are
+              <strong>locked</strong> until you are resumed.
+            </p>
+          </div>
+        </div>
+
+        <div id="complianceFeedback" class="action-feedback" role="status" aria-live="polite"></div>
+
+        <div class="card">
+          <div class="card-header-flex">
+            <div class="card-title">
+              <div>
+                <h3>
+                  <i class="fas fa-file-pdf" style="color: var(--text-muted)"></i>
+                  Final Approved Proposal
+                </h3>
+                <p>Phase 1 Gateway Document</p>
+              </div>
+            </div>
+            <div class="status-badge badge-missing" id="badgeProposal">
+              Pending Upload
+            </div>
+          </div>
+
+          <div class="upload-container">
+            <div class="upload-desc">
+              <p>
+                Upload the final version of your research proposal so it appears
+                in your compliance history and on the director's NACOSTI page.
+              </p>
+
+              <div class="file-display" id="displayProposal">
+                <div class="file-info">
+                  <i class="fas fa-file-pdf"></i>
+                  <div>
+                    <div class="file-name" id="nameProposal">proposal_final.pdf</div>
+                    <div class="file-size" id="metaProposal">Submitted to directorate</div>
+                  </div>
+                </div>
+                <button class="btn-remove" type="button" data-remove-doc="Proposal">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn-primary" type="button" id="submitProposal" data-submit-doc="Proposal" disabled>
+                  <i class="fas fa-paper-plane"></i> Submit Document
+                </button>
+              </div>
+            </div>
+
+            <div class="upload-box" id="boxProposal" data-upload-doc="Proposal">
+              <i class="fas fa-cloud-upload-alt upload-icon"></i>
+              <div class="upload-text">Click to Browse or Drag File Here</div>
+              <div class="upload-subtext">PDF name will be submitted to the live compliance API</div>
+              <input
+                type="file"
+                class="file-input"
+                id="inputProposal"
+                accept=".pdf"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-flex">
+            <div class="card-title">
+              <div>
+                <h3>
+                  <i class="fas fa-id-card" style="color: var(--text-muted)"></i>
+                  NACOSTI Research License
+                </h3>
+                <p>Regulatory Fieldwork Permit</p>
+              </div>
+            </div>
+            <div class="status-badge badge-missing" id="badgeNacosti">
+              Pending Upload
+            </div>
+          </div>
+
+          <div class="upload-container">
+            <div class="upload-desc">
+              <p>
+                Upload your NACOSTI research permit so the director can see it
+                on the dedicated Fieldwork / NACOSTI page.
+              </p>
+
+              <div class="file-display" id="displayNacosti">
+                <div class="file-info">
+                  <i class="fas fa-file-pdf"></i>
+                  <div>
+                    <div class="file-name" id="nameNacosti">nacosti_permit.pdf</div>
+                    <div class="file-size" id="metaNacosti">Submitted to directorate</div>
+                  </div>
+                </div>
+                <button class="btn-remove" type="button" data-remove-doc="Nacosti">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn-primary" type="button" id="submitNacosti" data-submit-doc="Nacosti" disabled>
+                  <i class="fas fa-paper-plane"></i> Submit Document
+                </button>
+              </div>
+            </div>
+
+            <div class="upload-box" id="boxNacosti" data-upload-doc="Nacosti">
+              <i class="fas fa-cloud-upload-alt upload-icon"></i>
+              <div class="upload-text">Click to Browse or Drag File Here</div>
+              <div class="upload-subtext">PDF name will be submitted to the live compliance API</div>
+              <input
+                type="file"
+                class="file-input"
+                id="inputNacosti"
+                accept=".pdf"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-flex">
+            <div class="card-title">
+              <div>
+                <h3>
+                  <i class="fas fa-folder-open" style="color: var(--text-muted)"></i>
+                  Other Related Compliance Document
+                </h3>
+                <p>Supporting fieldwork or regulatory document</p>
+              </div>
+            </div>
+            <div class="status-badge badge-missing" id="badgeOther">
+              Pending Upload
+            </div>
+          </div>
+
+          <div class="upload-container">
+            <div class="upload-desc">
+              <p>
+                Use this slot for ethics clearance, introductory letters, fieldwork
+                clearance, or any other related compliance document.
+              </p>
+
+              <div class="file-display" id="displayOther">
+                <div class="file-info">
+                  <i class="fas fa-file-pdf"></i>
+                  <div>
+                    <div class="file-name" id="nameOther">supporting_document.pdf</div>
+                    <div class="file-size" id="metaOther">Submitted to directorate</div>
+                  </div>
+                </div>
+                <button class="btn-remove" type="button" data-remove-doc="Other">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn-primary" type="button" id="submitOther" data-submit-doc="Other" disabled>
+                  <i class="fas fa-paper-plane"></i> Submit Document
+                </button>
+              </div>
+            </div>
+
+            <div class="upload-box" id="boxOther" data-upload-doc="Other">
+              <i class="fas fa-cloud-upload-alt upload-icon"></i>
+              <div class="upload-text">Click to Browse or Drag File Here</div>
+              <div class="upload-subtext">PDF name will be submitted to the live compliance API</div>
+              <input
+                type="file"
+                class="file-input"
+                id="inputOther"
+                accept=".pdf"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-flex">
+              <div class="card-title">
+                  <div>
+                      <h3><i class="fas fa-clipboard-list" style="color:var(--text-muted)"></i> Form of Intent to Submit Thesis</h3>
+                      <p>FORM/ASA/020-31: Official notification to the Board of Postgraduate Studies</p>
+                  </div>
+              </div>
+              <div class="status-badge badge-missing" id="badgeIntent">Not Submitted</div>
+          </div>
+
+          <div id="intentFormArea">
+              <div class="form-section">
+                  <h4>Section A & B: Candidate & Research Details</h4>
+                  <div class="intent-grid">
+                      <div class="info-block"><label>Candidate Name</label><div id="intentCandidateName">Loading...</div></div>
+                      <div class="info-block"><label>Registration No.</label><div id="intentRegistrationNo">Loading...</div></div>
+                      <div class="info-block"><label>Degree</label><div id="intentDegreeDisplay">Loading...</div></div>
+                      <div class="info-block"><label>Department</label><div id="intentDepartmentDisplay">Loading...</div></div>
+                      <div class="info-block wide"><label>Approved Thesis Title</label><div id="intentThesisTitleDisplay">Awaiting saved thesis intent</div></div>
+                      <div class="info-block wide"><label>Assigned Supervisor(s)</label><div id="intentSupervisorsDisplay">Loading...</div></div>
+                  </div>
+              </div>
+
+              <div class="form-section" style="margin-bottom: 0;">
+                  <h4>Section C: Student Declaration</h4>
+                  <p class="form-instruction">Please select your expected date of submission. As per university regulations, this notice must be submitted at least three (3) months prior to actual thesis submission.</p>
+                  
+                  <div class="form-group" style="max-width: 250px;">
+                      <label>Expected Date of Submission</label>
+                      <input type="date" class="form-input intent-input" id="intentDate">
+                  </div>
+                  
+                  <div class="checkbox-group mt-15">
+                      <input type="checkbox" id="intentDeclaration" class="custom-checkbox intent-input">
+                      <label for="intentDeclaration">I hereby declare that I intend to submit my thesis for examination on the date stated above, and that all data collection is complete.</label>
+                  </div>
+
+                  <button class="btn-primary mt-20" id="btnSubmitIntent" onclick="submitIntent()">
+                      <i class="fas fa-paper-plane"></i> Submit Notice of Intent
+                  </button>
+              </div>
+          </div>
+
+          <div id="intentTrackingArea" style="display: none; margin-top: 10px; border-top: 1px dashed #ecf0f1; padding-top: 25px;">
+              <h4 style="font-size: 13px; color: var(--primary-blue); margin-bottom: 15px; text-transform: uppercase;">Approval Routing Status</h4>
+              <div class="signature-chain">
+                  <div class="sig-step">
+                      <div class="sig-icon approved"><i class="fas fa-check"></i></div>
+                      <span class="sig-name">Candidate</span>
+                      <span class="sig-sub">Submitted</span>
+                  </div>
+                  <div class="sig-line active"></div>
+                  <div class="sig-step">
+                      <div class="sig-icon pending" id="sigIconSup"><i class="fas fa-pen-nib"></i></div>
+                      <span class="sig-name" id="sigTextSup">Supervisor(s)</span>
+                      <span class="sig-sub" id="sigSubSup">Pending Approval</span>
+                  </div>
+                  <div class="sig-line" id="sigLineDean"></div>
+                  <div class="sig-step">
+                      <div class="sig-icon locked" id="sigIconDean"><i class="fas fa-lock"></i></div>
+                      <span class="sig-name">Dean / HoD</span>
+                      <span class="sig-sub" id="sigSubDean">Awaiting Previous</span>
+                  </div>
+                  <div class="sig-line" id="sigLineBPS"></div>
+                  <div class="sig-step">
+                      <div class="sig-icon locked" id="sigIconBPS"><i class="fas fa-lock"></i></div>
+                      <span class="sig-name">BPS Director</span>
+                      <span class="sig-sub" id="sigSubBPS">Final Notification</span>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <div class="card" style="position: relative;">
+          <div class="card-header-flex">
+              <div class="card-title">
+                  <div>
+                      <h3><i class="fas fa-book" style="color:var(--text-muted)"></i> Final Thesis Submission</h3>
+                      <p>Phase 2 Examination Bundle</p>
+                  </div>
+              </div>
+              <div class="status-badge badge-missing" id="badgeThesis">Locked</div>
+          </div>
+          
+          <div class="upload-container" style="opacity: 0.5;" id="thesisContainerOp">
+              <div class="upload-desc">
+                  <p>Upload your final thesis document for external examination. This area will automatically unlock once your <strong>Notice of Intent to Submit</strong> has been fully approved by the BPS.</p>
+                  
+                  <div class="file-display" id="displayThesis">
+                      <div class="file-info"><i class="fas fa-file-pdf"></i><div><div class="file-name" id="nameThesis">final_thesis.pdf</div><div class="file-size">5.8 MB</div></div></div>
+                      <button class="btn-remove" onclick="removeFile('Thesis')"><i class="fas fa-times"></i></button>
+                  </div>
+              </div>
+              <div class="upload-box disabled" id="boxThesis" onclick="triggerInput('Thesis')">
+                  <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                  <div class="upload-text" id="thesisUploadText">Upload Area Locked</div>
+                  <input type="file" class="file-input" id="inputThesis" accept=".pdf" disabled>
+              </div>
+          </div>
+
+          <div class="locked-overlay" id="overlayThesis">
+              <i class="fas fa-lock"></i>
+              <p>Requires Fully Approved Notice of Intent</p>
+          </div>
+      </div>
+
+  </div>
+</div>
+
+
+        
+        <div class="card">
+          <div class="card-header-flex">
+            <div class="card-title">
+              <div>
+                <h3>
+                  <i class="fas fa-history" style="color: var(--text-muted)"></i>
+                  Submission History
+                </h3>
+                <p>Previously submitted compliance documents</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Document Type</th>
+                  <th>Document Name</th>
+                  <th>Open</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="complianceTableBody">
+                <tr>
+                  <td colspan="4" class="empty-row">Loading compliance history...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById("currentDateDisplay").innerText = new Date()
+        .toISOString()
+        .split("T")[0];
+    </script>
+    <script src="auth-guard.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="api.js"></script>
+    <script src="compliance.js"></script>
+  </body>
+</html>
