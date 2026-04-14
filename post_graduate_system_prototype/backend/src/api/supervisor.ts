@@ -1,20 +1,47 @@
 import { Router, type Request, type Response } from "express";
 import { UserModel } from "../models/user.model.js";
-import jwt from "jsonwebtoken";
+import { PanelEventModel } from "../models/panel.model.js";
+import { SupervisorAssignmentModel } from "../models/supervisor-action.model.js";
+import { bookingsModel } from "../models/student.bookings.js";
+import mongoose from "mongoose";
 
 export const SupervisorRouter = Router();
+
+async function resolveSupervisorIdentifiers(rawSupervisorId: string) {
+  const identifiers = new Set<string>();
+  if (rawSupervisorId) identifiers.add(rawSupervisorId);
+
+  if (mongoose.Types.ObjectId.isValid(rawSupervisorId)) {
+    const user = await UserModel.findById(rawSupervisorId).select("fullName userNumber");
+    if (user?.fullName) identifiers.add(user.fullName);
+    if (user?.userNumber) identifiers.add(user.userNumber);
+    identifiers.add(String(rawSupervisorId));
+  }
+
+  return Array.from(identifiers).filter(Boolean);
+}
+
+function resolveSupervisorSlot(student: any, identifiers: string[]) {
+  if (identifiers.includes(String(student?.supervisors?.sup1 || ""))) return "sup1";
+  if (identifiers.includes(String(student?.supervisors?.sup2 || ""))) return "sup2";
+  return null;
+}
+
+function requiredSupervisorRoles(student: any) {
+  return ["sup1", "sup2"];
+}
 
 // 1. Fetch assigned students
 // GET /supervisor/:id/students
 SupervisorRouter.get("/supervisor/:id/students", async (req: Request, res: Response) => {
   try {
-    const supervisorId = req.params.id;
-    // Find students where this supervisor is sup1, sup2, or sup3
+    const identifiers = await resolveSupervisorIdentifiers(String(req.params.id || ""));
+
+    // Find students where this supervisor is sup1 or sup2
     const students = await UserModel.find({
       $or: [
-        { "supervisors.sup1": supervisorId },
-        { "supervisors.sup2": supervisorId },
-        { "supervisors.sup3": supervisorId }
+        { "supervisors.sup1": { $in: identifiers } },
+        { "supervisors.sup2": { $in: identifiers } }
       ],
       role: "student"
     } as any);
@@ -30,25 +57,132 @@ SupervisorRouter.post("/students/:id/assign", async (req: Request, res: Response
   try {
     const studentId = req.params.id;
     const { supervisorId, action } = req.body; // action: "accepted" | "rejected"
-    
-    // Determine which slot this supervisor is in
+
+    if (!["accepted", "rejected"].includes(String(action || ""))) {
+      return res.status(400).json({ message: "Action must be accepted or rejected" });
+    }
+
     const student = await UserModel.findById(studentId);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
-    let slot = "";
-    if (student.supervisors?.sup1 === supervisorId) slot = "sup1";
-    else if (student.supervisors?.sup2 === supervisorId) slot = "sup2";
-    else if (student.supervisors?.sup3 === supervisorId) slot = "sup3";
+    const identifiers = await resolveSupervisorIdentifiers(String(supervisorId || ""));
+    const slot = resolveSupervisorSlot(student, identifiers);
 
     if (!slot) return res.status(403).json({ message: "Supervisor not assigned to this student" });
 
     const update: any = {};
     update[`assignmentStatus.${slot}`] = action;
+    const supervisor = mongoose.Types.ObjectId.isValid(String(supervisorId || ""))
+      ? await UserModel.findById(String(supervisorId)).select("fullName userNumber")
+      : null;
+    const supervisorName =
+      String(supervisor?.fullName || "").trim() ||
+      identifiers.find((value) => value === String(student?.supervisors?.[slot as "sup1" | "sup2"] || "")) ||
+      String(supervisorId || "").trim() ||
+      "Supervisor";
 
-    const updatedStudent = await UserModel.findByIdAndUpdate(studentId, { $set: update }, { new: true });
-    res.json({ message: `Assignment ${action}`, student: updatedStudent });
+    if (action === "rejected") {
+      update[`supervisors.${slot}`] = "";
+      update.$push = {
+        notes: `Director alert: ${supervisorName} rejected supervision assignment for ${student.fullName} (${student.userNumber}) on ${new Date().toLocaleDateString()}.`,
+      };
+
+      await SupervisorAssignmentModel.findOneAndUpdate(
+        {
+          studentId: student._id.toString(),
+          status: "active" as const,
+          $or: [
+            { supervisorId: String(supervisor?._id || supervisorId || "") },
+            { supervisorName },
+          ],
+        } as any,
+        {
+          $set: { status: "transferred" as const },
+          $push: { notes: `Rejected by ${supervisorName} on ${new Date().toLocaleDateString()}` },
+        },
+        { new: true },
+      );
+    }
+
+    const updatedStudent = await UserModel.findByIdAndUpdate(studentId, update, { new: true });
+    res.json({
+      message: action === "rejected"
+        ? "Assignment rejected and director notified"
+        : `Assignment ${action}`,
+      student: updatedStudent,
+    });
   } catch (error) {
     res.status(500).json({ message: "Error updating assignment status", error });
+  }
+});
+
+SupervisorRouter.get("/supervisor/:id/presentations", async (req: Request, res: Response) => {
+  try {
+    const identifiers = await resolveSupervisorIdentifiers(String(req.params.id || ""));
+
+    const students = await UserModel.find({
+      $or: [
+        { "supervisors.sup1": { $in: identifiers } },
+        { "supervisors.sup2": { $in: identifiers } }
+      ],
+      role: "student"
+    } as any).select("_id fullName userNumber programme department stage status assignmentStatus supervisors");
+
+    const eligibleStudents = students.filter((student: any) => {
+      const slot = resolveSupervisorSlot(student, identifiers);
+      if (!slot) return false;
+      return String(student?.assignmentStatus?.[slot] || "").toLowerCase() !== "rejected";
+    });
+
+    if (!eligibleStudents.length) {
+      return res.json({ success: true, count: 0, presentations: [] });
+    }
+
+    const studentIds = eligibleStudents.map((student: any) => String(student._id));
+    const bookings = await bookingsModel.find({
+      ownerId: { $in: studentIds }
+    }).sort({ createdAt: -1 }).lean();
+
+    const studentMap = new Map(
+      eligibleStudents.map((student: any) => [String(student._id), student]),
+    );
+
+    const presentations = bookings.map((booking: any) => {
+      const student = studentMap.get(String(booking.ownerId || ""));
+      if (!student) return null;
+
+      const slot = resolveSupervisorSlot(student, identifiers);
+      const assignmentStatus = slot
+        ? String(student?.assignmentStatus?.[slot] || "pending")
+        : "pending";
+
+      return {
+        bookingId: booking._id,
+        studentId: student._id,
+        studentName: student.fullName,
+        studentReg: student.userNumber,
+        programme: student.programme,
+        department: student.department,
+        stage: student.stage || "Coursework",
+        studentStatus: student.status || "Active",
+        assignmentStatus,
+        preferredDate: booking.preferredDate,
+        preferredTime: booking.preferredTime,
+        presentationType: booking.presentationType,
+        venue: booking.venue,
+        bookingStatus: booking.status,
+        additionalNotes: booking.additionalNotes || "",
+        createdAt: booking.createdAt,
+      };
+    }).filter(Boolean);
+
+    res.json({
+      success: true,
+      count: presentations.length,
+      presentations,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching supervisor presentations", error });
   }
 });
 
@@ -71,8 +205,23 @@ SupervisorRouter.post("/students/:id/stage/:stageName/approve", async (req: Requ
     const update: any = {};
     if (targetField) update[targetField] = action === "approved" ? "approved" : "rejected";
 
+    // --- Formal Governance Check ---
+    // Rule: Block sign-off if there are outstanding critical/major panel corrections
+    const studentPanels = await PanelEventModel.find({ studentId: String(id || "") });
+    const outstandingCorrections = studentPanels.flatMap((p: any) => 
+      (p.corrections || []).filter((c: any) => 
+        (c.category === "critical" || c.category === "major") && c.status !== "approved"
+      )
+    );
+
+    if (outstandingCorrections.length > 0) {
+      return res.status(400).json({ 
+        message: "Sign-off blocked. Candidate has unresolved Critical or Major corrections from a previous panel session.", 
+        outstandingCount: outstandingCorrections.length 
+      });
+    }
+
     // If approved, maybe advance stage?
-    // In this system, advance is usually done by Director, but let's allow supervisor small steps
     const student = await UserModel.findByIdAndUpdate(id, { $set: update }, { new: true });
     res.json({ message: `Stage ${action}`, student });
   } catch (error) {
@@ -150,115 +299,87 @@ SupervisorRouter.get("/students/:id/qreports", async (req: Request, res: Respons
   }
 });
 
-// Student requests deferral
-SupervisorRouter.post("/students/:id/deferral/request", async (req: Request, res: Response) => {
+SupervisorRouter.get("/supervisor/:id/qreports", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { reason, plannedResumption } = req.body;
-    const accessToken = req.cookies?.userToken;
-    const jwtSecret = process.env.JWT_SECRET;
+    const identifiers = await resolveSupervisorIdentifiers(String(req.params.id || ""));
+    const { status, q } = req.query;
 
-    if (!accessToken || !jwtSecret) {
-      return res.status(401).json({ message: "Unauthorized access" });
+    const students = await UserModel.find({
+      $or: [
+        { "supervisors.sup1": { $in: identifiers } },
+        { "supervisors.sup2": { $in: identifiers } },
+      ],
+      role: "student",
+      quarterlyReports: { $exists: true, $ne: [] },
+    } as any).select("fullName userNumber programme department supervisors quarterlyReports");
+
+    let reports = students.flatMap((student) => {
+      const supervisorRole = resolveSupervisorSlot(student, identifiers) || "sup1";
+
+      return (student.quarterlyReports || []).map((report) => ({
+        studentId: String(student._id),
+        studentName: student.fullName,
+        studentNumber: student.userNumber,
+        programme: student.programme,
+        department: student.department,
+        supervisorRole,
+        canReview: report.approvals?.[supervisorRole as keyof typeof report.approvals] === "pending",
+        report,
+      }));
+    });
+
+    if (status) {
+      const statusText = String(status).toLowerCase();
+      reports = reports.filter((entry) =>
+        String(entry.report?.status || "").toLowerCase().includes(statusText),
+      );
     }
 
-    const decoded: any = jwt.verify(accessToken, jwtSecret);
-    if (decoded.id !== id && decoded.role !== "director" && decoded.role !== "admin") {
-      return res.status(403).json({ message: "You can only request deferral for your own profile" });
+    if (q) {
+      const queryText = String(q).toLowerCase();
+      reports = reports.filter((entry) =>
+        [
+          entry.studentName,
+          entry.studentNumber,
+          entry.programme,
+          entry.department,
+          entry.report?.progressSummary,
+          entry.report?.objectivesAchieved,
+          entry.report?.challengesAndMitigation,
+          entry.report?.nextQuarterPlan,
+          `Q${entry.report?.quarter || ""} ${entry.report?.year || ""}`,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(queryText),
+      );
     }
 
-    const student = await UserModel.findById(id);
-    if (!student) return res.status(404).json({ message: "Student not found" });
+    reports.sort((a, b) => {
+      if ((b.report?.year || 0) !== (a.report?.year || 0)) {
+        return (b.report?.year || 0) - (a.report?.year || 0);
+      }
+      if ((b.report?.quarter || 0) !== (a.report?.quarter || 0)) {
+        return (b.report?.quarter || 0) - (a.report?.quarter || 0);
+      }
+      return String(a.studentName || "").localeCompare(String(b.studentName || ""));
+    });
 
-    if (student.status === "Deferred") {
-      return res.status(400).json({ message: "Student is already deferred" });
-    }
-
-    if (student.deferralInfo?.requestStatus === "pending") {
-      return res.status(400).json({ message: "A deferral request is already pending review" });
-    }
-
-    student.deferralInfo = {
-      ...(student.deferralInfo || {}),
-      reason: reason || "Student requested deferral",
-      plannedResumption: plannedResumption || "",
-      requestStatus: "pending",
-      requestedAt: new Date(),
-      reviewedBy: "",
-      supervisorComment: "",
-      stageAtDeferral: student.stage || "Application",
-    };
-
-    await student.save();
-    res.json({ message: "Deferral request submitted for supervisor review", student });
+    res.json({ success: true, reports });
   } catch (error) {
-    res.status(500).json({ message: "Error submitting deferral request", error });
-  }
-});
-
-// Supervisor approves or rejects deferral request
-SupervisorRouter.post("/students/:id/deferral/review", async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { supervisorId, action, comment } = req.body; // approved | rejected
-
-    const student = await UserModel.findById(id);
-    if (!student) return res.status(404).json({ message: "Student not found" });
-
-    const assignedSupervisorIds = [
-      student.supervisors?.sup1,
-      student.supervisors?.sup2,
-      student.supervisors?.sup3,
-    ].filter(Boolean);
-
-    if (!assignedSupervisorIds.includes(supervisorId)) {
-      return res.status(403).json({ message: "Supervisor not assigned to this student" });
-    }
-
-    if (student.deferralInfo?.requestStatus !== "pending") {
-      return res.status(400).json({ message: "There is no pending deferral request to review" });
-    }
-
-    const isApproved = action === "approved";
-    const nextDeferralInfo: NonNullable<typeof student.deferralInfo> = {
-      ...(student.deferralInfo || {}),
-      requestStatus: isApproved ? "approved" : "rejected",
-      reviewedAt: new Date(),
-      reviewedBy: supervisorId,
-      supervisorComment: comment || "",
-      stageAtDeferral: student.deferralInfo?.stageAtDeferral || student.stage || "Application",
-    };
-
-    if (isApproved) {
-      nextDeferralInfo.date = new Date();
-    }
-
-    student.deferralInfo = nextDeferralInfo;
-
-    if (isApproved) {
-      student.status = "Deferred";
-    } else if (student.status === "Deferred") {
-      student.status = "Resumed";
-    } else {
-      student.status = "Active";
-    }
-
-    await student.save();
-    res.json({ message: `Deferral request ${action}`, student });
-  } catch (error) {
-    res.status(500).json({ message: "Error reviewing deferral request", error });
+    res.status(500).json({ message: "Error fetching supervisor quarterly reports", error });
   }
 });
 
 // 6. Analytics: Workload & Bottlenecks
 SupervisorRouter.get("/supervisor/:id/analytics", async (req: Request, res: Response) => {
   try {
-    const supervisorId = req.params.id;
+    const identifiers = await resolveSupervisorIdentifiers(String(req.params.id || ""));
+
     const students = await UserModel.find({
       $or: [
-        { "supervisors.sup1": supervisorId },
-        { "supervisors.sup2": supervisorId },
-        { "supervisors.sup3": supervisorId }
+        { "supervisors.sup1": { $in: identifiers } },
+        { "supervisors.sup2": { $in: identifiers } }
       ],
       role: "student"
     } as any);
@@ -266,12 +387,12 @@ SupervisorRouter.get("/supervisor/:id/analytics", async (req: Request, res: Resp
     const analytics = {
       totalManaged: students.length,
       stageDistribution: students.reduce((acc: any, s) => {
-        acc[s.stage || "Application"] = (acc[s.stage || "Application"] || 0) + 1;
+        acc[s.stage || "Coursework"] = (acc[s.stage || "Coursework"] || 0) + 1;
         return acc;
       }, {}),
       bottlenecks: students.filter(s => s.atRisk).length,
       pendingAssignments: students.filter(s => {
-        const slot = s.supervisors?.sup1 === supervisorId ? "sup1" : (s.supervisors?.sup2 === supervisorId ? "sup2" : "sup3");
+        const slot = resolveSupervisorSlot(s, identifiers) || "sup1";
         return s.assignmentStatus?.[slot as keyof typeof s.assignmentStatus] === "pending";
       }).length,
       pendingQReports: students.filter(s => s.quarterlyReports?.some(r => r.status === "pending")).length
@@ -286,7 +407,8 @@ SupervisorRouter.get("/supervisor/:id/analytics", async (req: Request, res: Resp
 SupervisorRouter.post("/students/:id/qreports/:reportId/approve", async (req: Request, res: Response) => {
   try {
     const { id, reportId } = req.params;
-    const { supervisorId, role, action, comment } = req.body; // role: sup1, sup2, sup3, dean, finance
+    const { supervisorId, role, action, comment } = req.body; // role: sup1 or sup2
+    const identifiers = await resolveSupervisorIdentifiers(String(supervisorId || ""));
 
     const student = await UserModel.findById(id);
     if (!student) return res.status(404).json({ message: "Student not found" });
@@ -294,18 +416,45 @@ SupervisorRouter.post("/students/:id/qreports/:reportId/approve", async (req: Re
     const reportIndex = student.quarterlyReports?.findIndex(r => r.id === reportId);
     if (reportIndex === undefined || reportIndex === -1) return res.status(404).json({ message: "Report not found" });
 
-    const update: any = {};
-    update[`quarterlyReports.${reportIndex}.approvals.${role}`] = action === "approved" ? "approved" : "returned";
-    if (comment) update[`quarterlyReports.${reportIndex}.comment`] = comment;
+    const report = student.quarterlyReports?.[reportIndex];
+    const supervisorSlot = resolveSupervisorSlot(student, identifiers);
 
-    // Check if all supervisors approved to mark report as overall "approved"
-    // Simplified: if this role is sup1 and action is approved
-    if (role === "sup1" && action === "approved") {
-      update[`quarterlyReports.${reportIndex}.status`] = "approved";
+    if (!supervisorSlot || supervisorSlot !== role) {
+      return res.status(403).json({ message: "Supervisor is not assigned to this report slot" });
     }
 
-    const updatedStudent = await UserModel.findByIdAndUpdate(id, { $set: update }, { new: true });
-    res.json({ message: `Report ${action} by ${role}`, student: updatedStudent });
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    report.approvals[role as keyof typeof report.approvals] = action === "approved" ? "approved" : "returned";
+    report.comment = comment || "";
+    report.reviewTrail = [
+      ...(report.reviewTrail || []),
+      {
+        role,
+        actor: supervisorSlot.toUpperCase(),
+        action,
+        comment: comment || "",
+        at: new Date(),
+      },
+    ];
+
+    if (action === "returned") {
+      report.status = "returned";
+      report.approvals.dean = "pending";
+    } else {
+      const requiredRoles = requiredSupervisorRoles(student);
+      const allSupervisorsApproved = requiredRoles.every(
+        (requiredRole) =>
+          report.approvals[requiredRole as keyof typeof report.approvals] === "approved",
+      );
+      report.status = allSupervisorsApproved ? "pending_dean" : "pending";
+    }
+
+    student.markModified("quarterlyReports");
+    await student.save();
+    res.json({ message: `Report ${action} by ${role}`, student });
   } catch (error) {
     res.status(500).json({ message: "Error approving quarterly report", error });
   }
@@ -321,32 +470,42 @@ SupervisorRouter.post("/students/:id/automation/suggest", async (req: Request, r
 
     const settings = await SystemSettingsModel.findOne();
     const STAGES = [
-      "Application", "Concept Note", "Proposal", "Research Progress", "Thesis Submission", "Defense", "Graduation"
+      "Coursework",
+      "Concept Note (Department)",
+      "Concept Note (School)",
+      "Proposal (Department)",
+      "Proposal (School)",
+      "PG School Approval",
+      "Fieldwork / NACOSTI",
+      "Thesis Draft (Department)",
+      "Thesis Draft (School)",
+      "External Examination Submission",
+      "Under External Examination",
+      "Final Defence",
+      "Graduation Clearance",
     ];
 
-    const currentStageIdx = STAGES.indexOf(student.stage || "Application");
+    const currentStageIdx = STAGES.indexOf(student.stage || "Coursework");
     let suggestedStage = student.stage;
     let aiFlags = [];
 
     const score = student.documents?.proposalScore || 0;
     const threshold = settings?.minProposalScore || 60;
-    if (student.stage === "Proposal" && score < threshold) {
+    if (student.stage === "Proposal (School)" && score < threshold) {
        aiFlags.push(`Warning: Proposal score below required ${threshold}% threshold.`);
     }
 
     // 2. Lifecycle Stage Access Rules
-    if (settings?.autoCourseworkCompletion && student.stage === "Application" && student.financialClearance) {
-      suggestedStage = "Concept Note";
-      aiFlags.push("Auto-advancing: application clearance verified and student may begin concept note work.");
+    if (settings?.autoCourseworkCompletion && student.stage === "Coursework" && student.financialClearance) {
+      suggestedStage = "Concept Note (Department)";
+      aiFlags.push("Auto-advancing: Coursework verified + Financial clearance detected.");
     }
 
     // Standard progression suggestions based on document status
-    if (student.stage === "Concept Note" && student.documents?.conceptNote === "approved") {
-      suggestedStage = "Proposal";
-    } else if (student.stage === "Proposal" && student.documents?.proposal === "approved") {
-      suggestedStage = "Research Progress";
-    } else if (student.stage === "Research Progress" && student.quarterlyReports?.some(r => r.status === "approved")) {
-      suggestedStage = "Thesis Submission";
+    if (student.stage === "Concept Note (Department)" && student.documents?.conceptNote === "approved") {
+      suggestedStage = "Concept Note (School)";
+    } else if (student.stage === "Proposal (Department)" && student.documents?.proposal === "approved") {
+      suggestedStage = "Proposal (School)";
     }
 
     // Check for bottlenecks
@@ -367,4 +526,3 @@ SupervisorRouter.post("/students/:id/automation/suggest", async (req: Request, r
     res.status(500).json({ message: "Error running automation check", error });
   }
 });
-

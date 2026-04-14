@@ -9,6 +9,8 @@ export interface IUser {
   isVerified: boolean;
   programme: string;
   department: string;
+  year?: string;
+  mentor?: string;
   status: string;
   stage?: string;
   atRisk?: boolean;
@@ -20,11 +22,16 @@ export interface IUser {
     actualResumption?: Date;
     reason?: string;
     stageAtDeferral?: string;
-    requestStatus?: string;
-    requestedAt?: Date;
+  };
+  deferralRequest?: {
+    type?: "deferral" | "resumption";
+    status?: "pending" | "approved" | "rejected";
+    submittedAt?: Date;
     reviewedAt?: Date;
+    reason?: string;
+    plannedResumption?: string;
+    reviewComment?: string;
     reviewedBy?: string;
-    supervisorComment?: string;
   };
   supervisors?: {
     sup1?: string;
@@ -47,6 +54,10 @@ export interface IUser {
     status: string; // "pending", "approved", "returned"
     comment?: string;
     submittedAt?: Date;
+    progressSummary?: string;
+    objectivesAchieved?: string;
+    challengesAndMitigation?: string;
+    nextQuarterPlan?: string;
     approvals: {
       sup1: string;
       sup2: string;
@@ -54,6 +65,13 @@ export interface IUser {
       dean: string;
       finance: string;
     };
+    reviewTrail?: Array<{
+      role: string;
+      actor: string;
+      action: string;
+      comment?: string;
+      at?: Date;
+    }>;
     deadline?: Date;
   }>;
   automation?: {
@@ -75,9 +93,50 @@ export interface IUser {
     sup2?: string;
     sup3?: string;
   };
+  complianceUploads?: Array<{
+    id: string;
+    type: string;
+    title: string;
+    url?: string;
+    storagePath?: string;
+    bucket?: string;
+    mimeType?: string;
+    fileSize?: number;
+    note?: string;
+    submittedAt?: Date;
+  }>;
+  thesisSubmissionIntent?: {
+    thesisTitle?: string;
+    submissionCategory?: string;
+    targetSubmissionDate?: string;
+    phoneNumber?: string;
+    email?: string;
+    supervisorName?: string;
+    coSupervisorName?: string;
+    notes?: string;
+    submittedAt?: Date;
+    updatedAt?: Date;
+    status?: string;
+  };
 }
 
 //  Schema
+const ComplianceUploadSchema = new Schema(
+  {
+    id: { type: String },
+    type: { type: String },
+    title: { type: String },
+    url: { type: String },
+    storagePath: { type: String },
+    bucket: { type: String },
+    mimeType: { type: String },
+    fileSize: { type: Number },
+    note: { type: String },
+    submittedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const UserSchema = new Schema<IUser>({
   fullName: {
     type: String,
@@ -117,13 +176,23 @@ const UserSchema = new Schema<IUser>({
     required: true,
     lowercase: true,
   },
+  year: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+  mentor: {
+    type: String,
+    default: "",
+    trim: true,
+  },
   status: {
     type: String,
     default: "Active",
   },
   stage: {
     type: String,
-    default: "Application",
+    default: "Coursework",
   },
   atRisk: {
     type: Boolean,
@@ -143,11 +212,24 @@ const UserSchema = new Schema<IUser>({
     actualResumption: Date,
     reason: String,
     stageAtDeferral: String,
-    requestStatus: { type: String, default: "" },
-    requestedAt: Date,
+  },
+  deferralRequest: {
+    type: {
+      type: String,
+      enum: ["deferral", "resumption"],
+      default: null,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: null,
+    },
+    submittedAt: Date,
     reviewedAt: Date,
+    reason: String,
+    plannedResumption: String,
+    reviewComment: String,
     reviewedBy: String,
-    supervisorComment: String,
   },
   supervisors: {
     sup1: { type: String, default: "" },
@@ -170,6 +252,10 @@ const UserSchema = new Schema<IUser>({
     status: { type: String, default: "pending" },
     comment: String,
     submittedAt: { type: Date, default: Date.now },
+    progressSummary: { type: String, default: "" },
+    objectivesAchieved: { type: String, default: "" },
+    challengesAndMitigation: { type: String, default: "" },
+    nextQuarterPlan: { type: String, default: "" },
     approvals: {
       sup1: { type: String, default: "pending" },
       sup2: { type: String, default: "pending" },
@@ -177,6 +263,13 @@ const UserSchema = new Schema<IUser>({
       dean: { type: String, default: "pending" },
       finance: { type: String, default: "pending" },
     },
+    reviewTrail: [{
+      role: String,
+      actor: String,
+      action: String,
+      comment: String,
+      at: { type: Date, default: Date.now },
+    }],
     deadline: Date,
   }],
   automation: {
@@ -197,6 +290,23 @@ const UserSchema = new Schema<IUser>({
     sup1: { type: String, default: "pending" },
     sup2: { type: String, default: "pending" },
     sup3: { type: String, default: "pending" },
+  },
+  complianceUploads: {
+    type: [ComplianceUploadSchema],
+    default: [],
+  },
+  thesisSubmissionIntent: {
+    thesisTitle: { type: String, default: "" },
+    submissionCategory: { type: String, default: "Initial Submission" },
+    targetSubmissionDate: { type: String, default: "" },
+    phoneNumber: { type: String, default: "" },
+    email: { type: String, default: "" },
+    supervisorName: { type: String, default: "" },
+    coSupervisorName: { type: String, default: "" },
+    notes: { type: String, default: "" },
+    submittedAt: Date,
+    updatedAt: Date,
+    status: { type: String, default: "draft" },
   },
 }, { timestamps: true });
 

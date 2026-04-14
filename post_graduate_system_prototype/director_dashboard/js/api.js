@@ -56,6 +56,34 @@ export const api = {
   async getStudentDetails(id) {
     return request(`/students/${encodeURIComponent(id)}`);
   },
+  async getDeferralRequests() {
+    return request("/deferral-requests");
+  },
+  async reviewDeferralRequest(id, { action, comment } = {}) {
+    return request(`/students/${encodeURIComponent(id)}/deferral-review`, {
+      method: "POST",
+      body: { action, comment },
+    });
+  },
+  async reviewQuarterlyReport(studentId, reportId, { action, comment } = {}) {
+    return request(`/students/${encodeURIComponent(studentId)}/qreports/${encodeURIComponent(reportId)}/dean-review`, {
+      method: "POST",
+      body: { action, comment },
+    });
+  },
+  async getQuarterlyReportsBoard({ status, q } = {}) {
+    return request("/qreports/board", {
+      query: { status, q },
+    });
+  },
+  async getComplianceUploads() {
+    return request("/compliance/uploads");
+  },
+  async resumeStudent(id) {
+    return request(`/students/${encodeURIComponent(id)}/resume`, {
+      method: "POST",
+    });
+  },
 
   // Director actions (API-ready)
   async updateStudentStage(id, { stage, mode, reason } = {}) {
@@ -72,10 +100,10 @@ export const api = {
       body: { type, note },
     });
   },
-  async assignSupervisors(id, { sup1, sup2, sup3, override } = {}) {
+  async assignSupervisors(id, { sup1, sup2, override } = {}) {
     return request(`/students/${encodeURIComponent(id)}/supervisors`, {
       method: "POST",
-      body: { sup1, sup2, sup3, override: !!override },
+      body: { sup1, sup2, override: !!override },
     });
   },
   async flagStudent(id, { atRisk, note } = {}) {
@@ -184,6 +212,35 @@ export const api = {
     return request(`/reports/${encodeURIComponent(id)}/reject`, {
       method: "POST",
       body: { reason },
+    });
+  },
+  
+  // Panels
+  async getPanels() {
+    return request("/panels");
+  },
+  async createPanel(payload) {
+    return request("/panels", {
+      method: "POST",
+      body: payload
+    });
+  },
+  async getPanelResults(panelId) {
+    return request(`/panels/${encodeURIComponent(panelId)}/results`);
+  },
+  async getEligiblePanelists() {
+    return request("/users/eligible-panelists");
+  },
+  async reassignPanelist(panelId, payload) {
+    return request(`/panels/${encodeURIComponent(panelId)}/reassign`, {
+      method: "POST",
+      body: payload
+    });
+  },
+  async revokePanelist(panelId, memberId) {
+    return request(`/panels/${encodeURIComponent(panelId)}/revoke`, {
+      method: "POST",
+      body: { memberId }
     });
   },
 };

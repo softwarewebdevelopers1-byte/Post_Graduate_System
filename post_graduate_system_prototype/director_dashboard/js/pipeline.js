@@ -115,7 +115,7 @@ function render({ columns, totals }) {
           <div>
             <div class="text-xl font-bold tracking-tight text-slate-900">Global Pipeline Command</div>
             <div class="mt-1 text-xs text-slate-500 font-medium tracking-wide uppercase">
-              Application → Concept Note → Proposal → Research Progress → Thesis Submission → Defense → Graduation
+              Coursework → Concept Note → Proposal → PG Approval → Fieldwork → Thesis → Defense → Graduation
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
@@ -276,11 +276,10 @@ function wireDirectorActions() {
 
             <div class="rounded-2xl border border-slate-200 bg-white p-4">
               <div class="text-sm font-semibold">Supervisor control</div>
-              <div class="mt-1 text-xs text-slate-500">Assign / reassign Sup1, Sup2, Sup3 (override supported)</div>
+              <div class="mt-1 text-xs text-slate-500">Assign or add the missing supervisor. Leave a field blank to keep the current one.</div>
               <div class="mt-3 grid grid-cols-1 gap-2">
-                <input id="sup1" placeholder="Sup1 (staff id/email)" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
-                <input id="sup2" placeholder="Sup2 (optional)" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
-                <input id="sup3" placeholder="Sup3 (PhD optional)" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
+                <input id="sup1" placeholder="Sup1 (staff id/email) - optional if already assigned" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
+                <input id="sup2" placeholder="Sup2 (staff id/email) - optional if already assigned" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
                 <label class="flex items-center gap-2 text-xs text-slate-700">
                   <input id="supOverride" type="checkbox" class="h-4 w-4" />
                   Emergency override
@@ -353,7 +352,6 @@ function wireDirectorActions() {
         if (act === "saveSup") {
           const sup1 = modal.qs("#sup1")?.value?.trim() || "";
           const sup2 = modal.qs("#sup2")?.value?.trim() || "";
-          const sup3 = modal.qs("#sup3")?.value?.trim() || "";
           const override = !!modal.qs("#supOverride")?.checked;
           const ok = await confirmModal({
             title: "Assign supervisors",
@@ -362,7 +360,7 @@ function wireDirectorActions() {
             tone: override ? "yellow" : "blue",
           });
           if (!ok) return;
-          await api.assignSupervisors(studentId, { sup1, sup2, sup3, override });
+          await api.assignSupervisors(studentId, { sup1, sup2, override });
           toast("Supervisors assigned", { tone: "green" });
           modal.close();
           await load();
@@ -441,5 +439,4 @@ function wireDirectorActions() {
     });
   });
 }
-
 

@@ -12,7 +12,7 @@ UserSignUpRouter.post(
         res.status(400).json({ message: "body is empty" });
         return;
       }
-      const { fullName, userNumber, password, programme, role, department } = req.body;
+      const { fullName, userNumber, password, programme, role, department, year, mentor, supervisors } = req.body;
 
       // 1. Validate required fields
       if (!fullName || !userNumber || !password || !programme || !department) {
@@ -38,8 +38,15 @@ UserSignUpRouter.post(
         password: hashedPassword,
         programme,
         department,
+        year: year || "",
+        mentor: mentor || "",
         role: role || "student",
         isVerified: false,
+        supervisors: {
+          sup1: supervisors?.sup1 || "",
+          sup2: supervisors?.sup2 || "",
+          sup3: supervisors?.sup3 || "",
+        },
       });
 
       // 5. Respond with success
@@ -51,6 +58,8 @@ UserSignUpRouter.post(
           userNumber: newUser.userNumber,
           role: newUser.role,
           programme: newUser.programme,
+          year: newUser.year,
+          mentor: newUser.mentor,
           isVerified: newUser.isVerified,
         },
       });

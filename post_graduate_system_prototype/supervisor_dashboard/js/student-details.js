@@ -11,6 +11,10 @@ export async function initStudentDetails(studentId) {
     const detail = students.find(s => s._id === studentId);
 
     if (!detail) throw new Error("Student not found or not assigned to you");
+    
+    // Fetch Panel Data for formal corrections
+    const panels = await api.getStudentPanels(studentId);
+    detail.panels = panels || [];
 
     renderStudentDetail(detail, session.id);
   } catch (err) {
@@ -23,7 +27,7 @@ export async function initStudentDetails(studentId) {
 
 function renderStudentDetail(student, supervisorId) {
   const root = qs("#student-detail-root");
-  const stageIndex = STAGES.indexOf(student.stage || "Application");
+  const stageIndex = STAGES.indexOf(student.stage || "Coursework");
   const progressPercent = Math.round(((stageIndex + 1) / STAGES.length) * 100);
 
   root.innerHTML = `
@@ -47,7 +51,7 @@ function renderStudentDetail(student, supervisorId) {
       <div class="card mb-8">
         <div class="card-header">
           <div><div class="card-title">10-Gate Research Pipeline</div><div class="card-sub">Tracking candidate progression</div></div>
-          <span class="badge badge-active">Currently: ${student.stage || "Application"}</span>
+          <span class="badge badge-active">Currently: ${student.stage || "Coursework"}</span>
         </div>
         <div class="phase-label">Phase 1 — Foundation (Stages 1–5)</div>
         <div class="pipeline-track mb-8">${renderPipelineSegment(0, 5, stageIndex)}</div>
@@ -68,7 +72,6 @@ function renderStudentDetail(student, supervisorId) {
                <div class="card-title" style="margin-bottom:12px;">Quarterly Progress Reports</div>
                <div style="display:flex; flex-direction:column; gap:10px;">${renderReports(student.quarterlyReports)}</div>
             </div>
-            ${renderDeferralCard(student)}
             <div class="card">
                <div class="card-title" style="margin-bottom:12px;">Conditions for Next Gate</div>
                <div style="display:flex; flex-direction:column; gap:8px;">
@@ -81,13 +84,16 @@ function renderStudentDetail(student, supervisorId) {
          </div>
          <div style="display:flex; flex-direction:column; gap:20px;">
             <div class="card">
-               <div class="card-title">AI Assessment Checklist</div>
-               <div class="alert alert-info py-3 mb-4 mt-4" style="font-size:0.75rem;">
-                  <span class="alert-icon">🤖</span>
-                  <div>Candidate has completed <strong>${student.corrections?.filter(c => c.completed).length || 0} / ${student.corrections?.length || 0}</strong> corrections.</div>
+               <div class="card-title">Panel Corrections Checklist</div>
+               <div class="alert alert-warn py-3 mb-4 mt-4" style="font-size:0.75rem;">
+                  <span class="alert-icon">⚖️</span>
+                  <div>Track and approve formal panel corrections from presentations.</div>
                </div>
-               <div style="display:flex; flex-direction:column; gap:8px;">${renderCorrections(student.corrections)}</div>
-               <button class="btn btn-outline btn-sm mt-4 w-full btn-run-ai">⚡ Re-run AI Correction Scan</button>
+               <div style="display:flex; flex-direction:column; gap:8px;">${renderPanelCorrections(student.panels)}</div>
+            </div>
+            <div class="card">
+               <div class="card-title">NACOSTI & Compliance Uploads</div>
+               <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">${renderComplianceUploads(student.complianceUploads)}</div>
             </div>
             <div class="card" style="background:var(--navy); color:white;">
                <div class="card-title" style="color:var(--accent);">Full Gate Sign-Off</div>
@@ -141,89 +147,64 @@ function renderReports(reports = []) {
   `).join('');
 }
 
-function renderDeferralCard(student) {
-  const status = student?.deferralInfo?.requestStatus;
-  if (!status) return "";
-
-  const tone = status === "pending" ? "badge-pending" : status === "approved" ? "badge-deferred" : "badge-active";
-  const actions = status === "pending" ? `
-      <div class="flex-row mt-4" style="gap:10px;">
-        <button class="btn btn-primary btn-sm btn-approve-deferral">Approve Deferral</button>
-        <button class="btn btn-outline btn-sm btn-reject-deferral">Reject Request</button>
-      </div>
-    ` : "";
-
-  return `
-    <div class="card">
-      <div class="flex-between" style="margin-bottom:10px;">
-        <div class="card-title">Deferral Request</div>
-        <span class="badge ${tone}" style="font-size:0.68rem;">${status}</span>
-      </div>
-      <div class="text-xs text-muted" style="line-height:1.8;">
-        <div><strong>Reason:</strong> ${escapeHtml(student?.deferralInfo?.reason || "Not provided")}</div>
-        <div><strong>Planned Return:</strong> ${escapeHtml(student?.deferralInfo?.plannedResumption || "Not provided")}</div>
-        <div><strong>Requested At:</strong> ${student?.deferralInfo?.requestedAt ? new Date(student.deferralInfo.requestedAt).toLocaleString() : "N/A"}</div>
-        ${student?.deferralInfo?.supervisorComment ? `<div><strong>Comment:</strong> ${escapeHtml(student.deferralInfo.supervisorComment)}</div>` : ""}
-      </div>
-      ${actions}
-    </div>
-  `;
-}
-
-function renderCorrections(corrections = []) {
-  if (!corrections.length) return `<div class="p-8 text-center text-muted font-bold text-xs uppercase">No corrections found</div>`;
-  return corrections.map(c => `
-    <div class="flex-row" style="padding:10px; background:var(--grey-100); border-radius:var(--radius-sm); align-items:flex-start;">
-       <div style="font-size:0.9rem; margin-top:2px;">${c.completed ? '✅' : '⏳'}</div>
-       <div style="font-size:0.8rem; font-weight:500; color:var(--grey-700);">${escapeHtml(c.text)}</div>
+function renderPanelCorrections(panels = []) {
+  const allCorrections = panels.flatMap(p => (p.corrections || []).map(c => ({ ...c, panelId: p._id, stage: p.stage })));
+  if (!allCorrections.length) return `<div class="p-8 text-center text-muted font-bold text-xs uppercase italic">No formal panel corrections recorded</div>`;
+  
+  return allCorrections.map(c => `
+    <div class="flex-between" style="padding:10px 14px; background:white; border:1px solid #f1f5f9; border-radius:var(--radius-sm); align-items:center;">
+       <div style="flex:1; margin-right:12px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+             <span class="text-[9px] font-bold text-muted uppercase tracking-tighter">${c.stage}</span>
+             <span class="badge ${c.category === 'critical' ? 'badge-deferred' : 'badge-pending'}" style="font-size:0.55rem; padding:1px 6px;">${c.category}</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:500; color:var(--grey-700);">${escapeHtml(c.description)}</div>
+       </div>
+       <div style="text-align:right;">
+          ${c.status === 'fixed' ? `
+             <button class="btn btn-primary btn-xs btn-approve-correction" data-panel-id="${c.panelId}" data-id="${c._id}">Approve Fix</button>
+          ` : `
+             <span class="text-[9px] font-bold ${c.status === 'approved' ? 'text-green-500' : 'text-slate-400'} uppercase">
+                ${c.status}
+             </span>
+          `}
+       </div>
     </div>
   `).join('');
 }
 
+function renderComplianceUploads(uploads = []) {
+  if (!uploads.length) return `<div class="p-8 text-center text-muted font-bold text-xs uppercase">No NACOSTI or compliance uploads submitted</div>`;
+  return uploads
+    .slice()
+    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+    .map(upload => `
+      <div class="flex-between" style="padding:12px 16px; border:1px solid var(--grey-100); border-radius:var(--radius-sm); background:white; align-items:flex-start; gap:12px;">
+         <div>
+            <div class="text-sm font-bold text-navy">${escapeHtml(upload.type || "Compliance Document")}</div>
+            <div class="text-xs font-medium text-muted mt-1">${escapeHtml(upload.title || "-")}</div>
+            <div class="text-[10px] font-bold text-muted uppercase mt-2">${upload.submittedAt ? new Date(upload.submittedAt).toLocaleString() : "-"}</div>
+         </div>
+         ${upload.url ? `<a class="btn btn-outline btn-sm" href="${escapeHtml(upload.url)}" target="_blank" rel="noopener">Open</a>` : `<span class="badge badge-pending">No Link</span>`}
+      </div>
+    `)
+    .join('');
+}
+
 function setupDetailEvents(student) {
   qsa(".btn-action-center").forEach(btn => { btn.onclick = () => openActionCenter(student); });
-  qs(".btn-approve-deferral")?.addEventListener("click", () => openDeferralReviewModal(student, "approved"));
-  qs(".btn-reject-deferral")?.addEventListener("click", () => openDeferralReviewModal(student, "rejected"));
 
-  qs(".btn-run-ai")?.addEventListener("click", async () => {
-     toast("AI Engine: Scanning Research Draft...", { tone: "blue" });
-     try {
-        await api.triggerAutoCheck(student._id);
-        toast("Scan Complete: Conditions Updated", { tone: "green" });
-        initStudentDetails(student._id);
-     } catch(e) { toast("Error: " + e.message, { tone: "red" }); }
+  qsa(".btn-approve-correction").forEach(btn => {
+     btn.onclick = async () => {
+        try {
+           await api.approvePanelCorrection(btn.dataset.panelId, btn.dataset.id);
+           toast("Correction Officially Approved", { tone: "green" });
+           initStudentDetails(student._id);
+        } catch(e) { toast("Error: " + e.message, { tone: "red" }); }
+     };
   });
 
   qsa(".btn-review-report").forEach(btn => { btn.onclick = () => openReportApprovalModal(student, btn.dataset.id); });
-}
-
-function openDeferralReviewModal(student, action) {
-  const session = getSupervisorSession();
-  openModal({
-    title: action === "approved" ? "Approve Deferral Request" : "Reject Deferral Request",
-    bodyHtml: `<div style="display:flex; flex-direction:column; gap:16px;">
-      <p class="text-sm">Review the deferral request for <strong>${student.fullName}</strong>.</p>
-      <textarea id="deferral-comment" class="form-textarea" placeholder="Supervisor comment..."></textarea>
-    </div>`,
-    footerHtml: `
-      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').style.display='none'">Cancel</button>
-      <button class="btn btn-primary" id="btn-submit-deferral-review">${action === "approved" ? "Approve" : "Reject"}</button>
-    `
-  });
-
-  qs("#btn-submit-deferral-review").onclick = async () => {
-    try {
-      await api.reviewDeferral(student._id, {
-        supervisorId: session.id,
-        action,
-        comment: qs("#deferral-comment")?.value || "",
-      });
-      toast(`Deferral ${action}`, { tone: "green" });
-      initStudentDetails(student._id);
-    } catch (e) {
-      toast("Error: " + e.message, { tone: "red" });
-    }
-  };
 }
 
 function openReportApprovalModal(student, reportId) {
@@ -250,7 +231,7 @@ function openReportApprovalModal(student, reportId) {
 }
 
 function openActionCenter(student) {
-   const currentStage = (student.stage || "Application").toLowerCase();
+   const currentStage = (student.stage || "Coursework").toLowerCase();
    // Simple mapping for stage gate vs document
    let technicalStage = "conceptNote";
    if (currentStage.includes("proposal")) technicalStage = "proposal";
@@ -277,4 +258,3 @@ function openActionCenter(student) {
       } catch(e) { toast("Error: " + e.message, { tone: "red" }); }
    };
 }
-

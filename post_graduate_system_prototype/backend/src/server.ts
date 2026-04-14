@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import { ConnectToDataBase } from "./Database/databaseConnect.js";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
 import { UserLoginRouter } from "./auth/login.js";
 import { UserSignUpRouter } from "./auth/admin_signUp_User.js";
 import { DirectorRouter } from "./api/director.js";
@@ -13,7 +14,7 @@ import { studentBookings } from "./api/student.bookings.js";
 import { SeminarSlotRouter } from "./api/seminar.slots.js";
 import { reportRouter } from "./api/report.routes.js";
 import { settingsRouter } from "./api/settings.routes.js";
-import { workflowRouter } from "./api/workflow.js";
+import { PanelRouter } from "./api/panel.routes.js";
 dotenv.config();
 let app = express();
 
@@ -24,6 +25,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5500",
+      "https://post-graduate-system-prototype-xy2c.onrender.com",
       "https://post-graduate-system-prototype.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -35,6 +37,7 @@ app.use(
 // router/path-to-regexp version, so rely on the global `cors` middleware above.
 
 app.use(express.json());
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // login route
 app.use("/api/user/login", UserLoginRouter);
 // signup route
@@ -53,8 +56,8 @@ app.use("/api/slots", SeminarSlotRouter);
 app.use("/api", reportRouter);
 // system settings
 app.use("/api", settingsRouter);
-// workflow logic
-app.use("/api/workflow", workflowRouter);
+// panel routes
+app.use("/api", PanelRouter);
 // handling unknown route
 app.use((req: Request, res: Response): void => {
   res.status(500).json({ message: "No route found" });

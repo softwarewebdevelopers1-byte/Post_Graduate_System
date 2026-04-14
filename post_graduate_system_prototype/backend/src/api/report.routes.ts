@@ -6,7 +6,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { readFile } from "fs/promises";
-import { UserModel } from "../models/user.model.js";
 
 export const reportRouter = Router();
 
@@ -161,17 +160,6 @@ reportRouter.post(
         return res.status(401).json({
           success: false,
           message: "Invalid or expired token",
-        });
-      }
-
-      const student = await UserModel.findById(decoded.id).select("status");
-      if (student?.status === "Deferred") {
-        if (filePath && fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-        return res.status(403).json({
-          success: false,
-          message: "Quarterly reports are paused while the student is deferred",
         });
       }
 

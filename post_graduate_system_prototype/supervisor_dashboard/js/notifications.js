@@ -7,8 +7,8 @@ export async function initNotifications() {
   if (!root) return;
 
   try {
-    const students = await api.getAssignedStudents(session.id);
-    const notifications = generateNotifications(students, session.id);
+    const response = await api.getMyNotifications();
+    const notifications = normalizeNotifications(response.notifications || [], session.id);
     renderNotifications(notifications);
   } catch (err) {
     root.innerHTML = `<div class="p-12 text-center text-red-500 font-bold bg-white rounded-3xl animate-in shadow-xl">
@@ -18,51 +18,17 @@ export async function initNotifications() {
   }
 }
 
-function generateNotifications(students, supervisorId) {
-  const notifications = [];
-
-  students.forEach(s => {
-    const slot = s.supervisors.sup1 === supervisorId ? "sup1" : (s.supervisors.sup2 === supervisorId ? "sup2" : "sup3");
-    
-    // 1. New Assignment
-    if (s.assignmentStatus?.[slot] === "pending") {
-      notifications.push({
-        type: "assignment",
-        title: "New Student Assignment",
-        message: `${s.fullName} (${s.userNumber}) has been assigned to you. Action required: Accept or Reject in Pipeline.`,
-        date: new Date().toISOString(),
-        priority: "high",
-        studentId: s._id
-      });
-    }
-
-    // 2. Pending Reports
-    const pendingReports = s.quarterlyReports?.filter(r => r.status === "pending") || [];
-    pendingReports.forEach(r => {
-      notifications.push({
-        type: "report",
-        title: "Quarterly Report Verification",
-        message: `${s.fullName} has submitted the Q${r.quarter} ${r.year} progress report. Verification required for state advancement.`,
-        date: r.submittedAt,
-        priority: "medium",
-        studentId: s._id
-      });
-    });
-
-    // 3. Document submissions (e.g. Thesis/Proposal)
-    if (s.documents?.conceptNote === "pending" && s.stage?.includes("Concept")) {
-      notifications.push({
-        type: "document",
-        title: "Milestone Document for Review",
-        message: `${s.fullName} uploaded a Concept Note for institutional validation.`,
-        date: new Date().toISOString(),
-        priority: "medium",
-        studentId: s._id
-      });
-    }
-  });
-
-  return notifications.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+function normalizeNotifications(notifications) {
+  return notifications
+    .map((n) => ({
+      type: n.type === "quarterly_report_submitted" ? "report" : (n.type || "assignment"),
+      title: n.title || "Notification",
+      message: n.message || "",
+      date: n.createdAt || new Date().toISOString(),
+      priority: n.type === "quarterly_report_submitted" ? "medium" : "high",
+      studentId: n.studentId || "",
+    }))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 function renderNotifications(notifications) {

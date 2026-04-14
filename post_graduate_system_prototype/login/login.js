@@ -4,6 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const userNumberInput = document.getElementById("userNumber");
     const passwordInput = document.getElementById("password");
     const messageBox = document.getElementById("messageBox");
+    const API_BASE = "http://localhost:5000/api";
+
+    function getRedirectByRole(role) {
+        if (role === "student") return "../student_admin2/profile.html";
+        if (role === "supervisor") return "../supervisor_dashboard/index.html";
+        if (role === "director") return "../director_dashboard/index.html";
+        if (role === "admin") return "../Admin_dashboard/index.html";
+        if (role === "panelMember") return "../panel dashboard/index.html";
+        return null;
+    }
 
     function showMessage(message, type) {
         messageBox.textContent = message;
@@ -14,6 +24,32 @@ document.addEventListener("DOMContentLoaded", () => {
             messageBox.style.display = "none";
         }, 4000);
     }
+
+    async function checkExistingSession() {
+        try {
+            const response = await fetch(`${API_BASE}/is-logged`, {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Accept": "application/json"
+                }
+            });
+
+            if (!response.ok) return;
+
+            const result = await response.json();
+            const redirectPath = getRedirectByRole(result?.user?.role);
+
+            if (result?.isLoggedIn && redirectPath) {
+                localStorage.setItem("postgraduate_user", JSON.stringify(result.user));
+                window.location.replace(redirectPath);
+            }
+        } catch (error) {
+            console.error("Session check failed:", error);
+        }
+    }
+
+    checkExistingSession();
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -32,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const response = await fetch("http://localhost:5000/api/user/login", {
+            const response = await fetch(`${API_BASE}/user/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -66,35 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Redirect based on role
                 const role = result.user.role;
 
-                if (role === "student") {
+                const redirectPath = getRedirectByRole(role);
+                if (redirectPath) {
                     setTimeout(() => {
-                        window.location.href = "../Student_dashboard/index.html";
-                    }, 1500);
-                } else if (role === "supervisor") {
-                    setTimeout(() => {
-                        window.location.href = "../supervisor_dashboard/index.html";
-                    }, 1500);
-                } else if (role === "director") {
-                    setTimeout(() => {
-                        window.location.href = "../director_dashboard/index.html";
-                    }, 1500);
+                        window.location.href = redirectPath;
+                    }, 1200);
+                } else {
+                    showMessage("Login succeeded, but no destination is configured for this role.", "error");
                 }
-                else if (role === "admin") {
-                    setTimeout(() => {
-                        window.location.href = "../Admin_dashboard/index.html"
-                    })
-                }
-                else if (role === "panelMember") {
-                    setTimeout(() => {
-                        window.location.href = "../panel dashboard/index.html"
-                    })
-                }
-                // else {
-                //     // Default fallback
-                //     setTimeout(() => {
-                //         window.location.href = "../dashboard/index.html";
-                //     }, 1500);
-                // }
             } else {
                 showMessage(result.message || "Login failed", "error");
             }

@@ -61,7 +61,8 @@ UserLoginRouter.post(
       );
       res.cookie("userToken", token, {
         httpOnly: true,
-        secure: true, // MUST be true for cross-origin (HTTPS only)
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        secure: true,
         sameSite: "none",
       });
       // 5. Send response
@@ -96,14 +97,11 @@ UserLoginRouter.post(
   "/logout",
   async (req: Request, res: Response): Promise<void> => {
     try {
-      // Clear the userToken cookie
-      res.clearCookie("userToken");
-
-      // Also clear any other session-related cookies if they exist
-      res.clearCookie("connect.sid", {
-        path: "/",
+      res.clearCookie("userToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
       });
-
       // Optional: If you're using session storage, you can destroy it here
       // req.session.destroy((err) => { ... });
 
@@ -130,14 +128,11 @@ UserLoginRouter.get(
   "/logout",
   async (req: Request, res: Response): Promise<void> => {
     try {
-      // Clear the userToken cookie
       res.clearCookie("userToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
+        secure: true,
+        sameSite: "none",
       });
-
       // Redirect to login page or send JSON based on Accept header
       const acceptHeader = req.headers.accept || "";
 
@@ -196,8 +191,11 @@ UserLoginRouter.post(
         // This would require storing token versions in the database
         // await UserModel.findByIdAndUpdate(decoded.id, { $inc: { tokenVersion: 1 } });
 
-        // Clear the cookie
-        res.clearCookie("userToken");
+        res.clearCookie("userToken", {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        });
 
         res.status(200).json({
           success: true,
@@ -205,7 +203,11 @@ UserLoginRouter.post(
         });
       } catch (verifyError) {
         // Token is already invalid, just clear it
-        res.clearCookie("userToken");
+        res.clearCookie("userToken", {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        });
 
         res.status(200).json({
           success: true,

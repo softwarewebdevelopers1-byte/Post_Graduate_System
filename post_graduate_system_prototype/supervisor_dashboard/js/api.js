@@ -10,7 +10,6 @@ async function request(path, { method = "GET", body, headers } = {}) {
       "Content-Type": "application/json",
       ...(headers || {}),
     },
-    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -64,12 +63,15 @@ export const api = {
   async getReports(studentId) {
     return request(`/students/${encodeURIComponent(studentId)}/qreports`);
   },
-
-  async reviewDeferral(studentId, { supervisorId, action, comment } = {}) {
-    return request(`/students/${encodeURIComponent(studentId)}/deferral/review`, {
-      method: "POST",
-      body: { supervisorId, action, comment }
-    });
+  async getQuarterlyReportsBoard(supervisorId, { status, q } = {}) {
+    const query = new URLSearchParams();
+    if (status) query.set("status", status);
+    if (q) query.set("q", q);
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return request(`/supervisor/${encodeURIComponent(supervisorId)}/qreports${suffix}`);
+  },
+  async getMyNotifications() {
+    return request("/notifications/my");
   },
 
   // Analytics & Automation
@@ -88,6 +90,24 @@ export const api = {
     return request(`/students/${encodeURIComponent(studentId)}/automation/suggest`, {
       method: "POST"
     });
+  },
+
+  // --- Formal Panel Module Support ---
+  async getStudentPanels(studentId) {
+    return request(`/panels/student/${encodeURIComponent(studentId)}`);
+  },
+
+  async approvePanelCorrection(panelId, correctionId) {
+    return request(`/panels/${encodeURIComponent(panelId)}/corrections/${encodeURIComponent(correctionId)}/approve`, {
+      method: "PATCH"
+    });
+  },
+
+  async getMyPanelAssignments(userId) {
+    return request(`/panels/my/${encodeURIComponent(userId)}`);
+  },
+  async getMyPresentations(supervisorId) {
+    return request(`/supervisor/${encodeURIComponent(supervisorId)}/presentations`);
   },
 
   // Dashboard Summary (Computed from fetched students)

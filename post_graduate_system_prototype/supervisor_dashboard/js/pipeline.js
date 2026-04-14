@@ -86,7 +86,7 @@ function renderPipelineRow(student, supervisorId) {
   const slot = student.supervisors?.sup1 === supervisorId ? "sup1" : (student.supervisors?.sup2 === supervisorId ? "sup2" : "sup3");
   const isPending = student.assignmentStatus?.[slot] === "pending";
   const statusColor = student.status === "Active" ? "bg-[#14b5d9]" : (student.status === "Deferred" ? "bg-amber-500" : "bg-slate-400");
-  const stageIndex = STAGES.indexOf(student.stage || "Application");
+  const stageIndex = STAGES.indexOf(student.stage || "Coursework");
   const progressPercent = Math.round(((stageIndex + 1) / STAGES.length) * 100);
 
   return `
@@ -107,7 +107,7 @@ function renderPipelineRow(student, supervisorId) {
       <td class="px-8 py-6">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
            <span class="h-1.5 w-1.5 rounded-full bg-rongo-dark"></span>
-           <span class="text-[10px] font-black uppercase text-rongo-dark">${student.stage || "Application"}</span>
+           <span class="text-[10px] font-black uppercase text-rongo-dark">${student.stage || "Coursework"}</span>
         </div>
       </td>
       <td class="px-8 py-6">
@@ -169,4 +169,3 @@ async function handleAssignment(studentId, supervisorId, action) {
     toast(`Error: ${err.message}`, { tone: "red" });
   }
 }
-

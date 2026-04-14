@@ -1,11 +1,17 @@
 export const STAGES = [
-  "Application",
-  "Concept Note",
-  "Proposal",
-  "Research Progress",
-  "Thesis Submission",
-  "Defense",
-  "Graduation",
+  "Coursework",
+  "Concept Note (Department)",
+  "Concept Note (School)",
+  "Proposal (Department)",
+  "Proposal (School)",
+  "PG School Approval",
+  "Fieldwork / NACOSTI",
+  "Thesis Draft (Department)",
+  "Thesis Draft (School)",
+  "External Examination Submission",
+  "Under External Examination",
+  "Final Defence",
+  "Graduation Clearance",
 ];
 document.addEventListener("DOMContentLoaded", async () => {
   let response = await fetch("http://localhost:5000/api/islogged", {
@@ -26,11 +32,17 @@ export async function handleLogout() {
       method: "POST", 
       credentials: "include" 
     });
-    localStorage.removeItem("postgraduate_user");
-    window.location.href = "../../login/login.html";
   } catch (err) {
+    console.error("Logout failed:", err);
+  } finally {
     localStorage.removeItem("postgraduate_user");
-    window.location.href = "../../login/login.html";
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("userToken");
+    sessionStorage.removeItem("postgraduate_user");
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("userToken");
+    sessionStorage.clear();
+    window.location.replace("../../login/login.html");
   }
 }
 export const DEPARTMENTS = ["CJM", "IHRS"];
@@ -229,11 +241,14 @@ export async function initShell() {
     { key: "dashboard", label: "Dashboard", href: "./dashboard.html" },
     // { key: "pipeline", label: "Pipeline", href: "./pipeline.html" },
     { key: "students", label: "Students", href: "./students.html" },
+    { key: "deferrals", label: "Deferrals", href: "./deferrals.html" },
     { key: "supervisors", label: "Supervisors", href: "./supervisors.html" },
     // { key: "departments", label: "Departments", href: "./departments.html" },
     { key: "reports", label: "Quarterly Reports", href: "./reports.html" },
-    { key: "thesis", label: "Thesis & Defense", href: "./thesis.html" },
+    { key: "compliance", label: "Fieldwork / NACOSTI", href: "./compliance.html" },
+    // { key: "thesis", label: "Thesis & Defense", href: "./thesis.html" },
     { key: "graduation", label: "Graduation", href: "./graduation.html" },
+    { key: "panels", label: "Panel Management", href: "./panels.html" },
     { key: "analytics", label: "Analytics", href: "./analytics.html" },
     { key: "settings", label: "Settings", href: "./settings.html" },
   ];

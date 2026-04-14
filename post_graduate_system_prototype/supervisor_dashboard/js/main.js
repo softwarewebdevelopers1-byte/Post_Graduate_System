@@ -4,13 +4,19 @@ export const qsa = (s) => document.querySelectorAll(s);
 
 // Global State
 export const STAGES = [
-  "Application",
-  "Concept Note",
-  "Proposal",
-  "Research Progress",
-  "Thesis Submission",
-  "Defense",
-  "Graduation"
+  "Coursework",
+  "Concept Note (Department)",
+  "Concept Note (School)",
+  "Proposal (Department)",
+  "Proposal (School)",
+  "PG School Approval",
+  "Fieldwork / NACOSTI",
+  "Thesis Draft (Department)",
+  "Thesis Draft (School)",
+  "External Examination Submission",
+  "Under External Examination",
+  "Final Defence",
+  "Graduation Clearance"
 ];
 
 // ---------------------------------------------------------
@@ -25,14 +31,19 @@ export async function handleLogout() {
       method: "POST", 
       credentials: "include" 
     });
-    
-    localStorage.removeItem("postgraduate_user");
-    localStorage.removeItem("auth_token");
-    window.location.href = "../login/login.html";
   } catch (err) {
+    console.error("Logout failed:", err);
+  } finally {
     localStorage.removeItem("postgraduate_user");
     localStorage.removeItem("auth_token");
-    window.location.href = "../login/login.html";
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("supervisor_session");
+    sessionStorage.removeItem("postgraduate_user");
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("userToken");
+    sessionStorage.removeItem("supervisor_session");
+    sessionStorage.clear();
+    window.location.replace("../login/login.html");
   }
 }
 
@@ -77,18 +88,24 @@ export function getSupervisorSession() {
   const session = localStorage.getItem("postgraduate_user");
   // Simulated session for hackathon demo fallback
   if (!session) {
-    const mock = { id: "Dr. Supervisor", name: "Dr. Supervisor" };
+    const mock = { id: "65f1a2b3c4d5e6f7a8b9c0d1", name: "Dr. Supervisor", fullName: "Dr. Supervisor" };
     localStorage.setItem("supervisor_session", JSON.stringify(mock));
     return mock;
   }
   const user = JSON.parse(session);
-  // The backend uses supervisor.fullName to link students, so we map id to fullName
-  return { id: user.fullName || "Dr. Supervisor", name: user.fullName || "Dr. Supervisor" };
+  // We need BOTH the real _id for panel assignments and the fullName for student linkage
+  return { 
+    id: user._id || user.id, 
+    name: user.fullName || "Dr. Supervisor",
+    fullName: user.fullName || "Dr. Supervisor",
+    userNumber: user.userNumber || ""
+  };
 }
 
 import { initDashboard } from './dashboard.js';
 import { initStudentDetails } from './student-details.js';
 import { initNotifications } from './notifications.js';
+import { initQuarterlyReportsBoard } from './qreports.js';
 // SPA Switcher
 export function navigateTo(target, btn = null, extraId = null) {
     // Close mobile nav on switch
@@ -106,6 +123,7 @@ export function navigateTo(target, btn = null, extraId = null) {
         'student-detail': { title: "Student Detail View", sub: "Deep Oversight & Sign-Off Hub" },
         notifications: { title: "Alerts Center", sub: "Smart alerts from RU PG State Machine" },
         presentations: { title: "Presentations Dashboard", sub: "Upcoming calendar and participation logic" },
+        qreports: { title: "Quarterly Reports", sub: "Supervisor review board for submitted student quarterly reports" },
         approvals: { title: "Progress Approvals", sub: "Institutional gatekeeper oversight hub" },
         settings: { title: "Profile Management", sub: "Supervisor security and personal records" }
     };
@@ -121,6 +139,10 @@ export function navigateTo(target, btn = null, extraId = null) {
     if (target === "dashboard") initDashboard();
     else if (target === "student-detail") initStudentDetails(extraId);
     else if (target === "notifications") initNotifications();
+    else if (target === "qreports") initQuarterlyReportsBoard();
+    else if (target === "presentations") {
+        import('./presentations.js').then(m => m.initPresentations());
+    }
     else {
         qs("#generic-title").textContent = config.title;
         qs("#generic-icon").textContent = target === "settings" ? "⚙️" : (target === "presentations" ? "📅" : "🛡️");

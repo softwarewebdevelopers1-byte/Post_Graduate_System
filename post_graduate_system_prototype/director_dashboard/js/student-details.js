@@ -56,7 +56,7 @@ function supervisorsSection(sups = []) {
       <div class="flex items-end justify-between gap-3">
         <div>
           <div class="text-sm font-semibold">Supervisors</div>
-          <div class="mt-1 text-xs text-slate-500">Sup1, Sup2, Sup3 (where applicable) • contacts • approval status</div>
+          <div class="mt-1 text-xs text-slate-500">Sup1 and Sup2 • contacts • approval status</div>
         </div>
         <a href="./supervisors.html" class="text-sm font-semibold text-blue-700 hover:underline">Supervisors page</a>
       </div>
@@ -89,10 +89,11 @@ function supervisorsSection(sups = []) {
 function documentsSection(docs = {}) {
   const items = [
     ["Concept note", docs?.conceptNote],
-    ["Proposal", docs?.proposal],
+    ["Proposal", docs?.proposalFile || docs?.proposal],
     ["Thesis", docs?.thesis],
     ["NACOSTI permit", docs?.nacostiPermit],
-    ["Publication", docs?.publication],
+    ["Other compliance", docs?.otherCompliance],
+    ["Publication", docs?.publication || docs?.journalPaper],
     ["Mentorship", docs?.mentorship],
     ["Fee clearance", docs?.feeClearance],
   ];
@@ -122,7 +123,7 @@ function documentsSection(docs = {}) {
 }
 
 function approvalChain(chain) {
-  const steps = Array.isArray(chain) && chain.length ? chain : ["Sup1", "Sup2", "Sup3", "Director", "Finance"];
+  const steps = Array.isArray(chain) && chain.length ? chain : ["Sup1", "Sup2", "Director", "Finance"];
   return `
     <div class="flex flex-wrap items-center gap-2 text-xs">
       ${steps.map((s, i) => `
@@ -135,7 +136,17 @@ function approvalChain(chain) {
   `;
 }
 
-function reportsSection(reports = []) {
+function qReportApprovalChain(report = {}, programme = "masters") {
+  const approvals = report?.approvals || {};
+  const steps = [
+    { name: "Sup1", status: approvals.sup1 || "pending" },
+    { name: "Sup2", status: approvals.sup2 || "pending" },
+  ];
+  steps.push({ name: "Dean", status: approvals.dean || "pending" });
+  return steps;
+}
+
+function reportsSection(reports = [], programme = "masters") {
   const arr = Array.isArray(reports) ? reports : [];
   return `
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
@@ -149,10 +160,11 @@ function reportsSection(reports = []) {
 
       <div class="mt-4 space-y-3">
         ${arr.length ? arr.map((r) => {
-          const title = r?.title || r?.period || `Report ${r?.id || ""}`.trim() || "Quarterly report";
+          const title = r?.title || r?.period || `Q${r?.quarter || "?"} ${r?.year || ""}`.trim() || `Report ${r?.id || ""}`.trim() || "Quarterly report";
           const status = r?.status || "Pending";
           const s = String(status).toLowerCase();
           const tone = s.includes("approved") ? "green" : s.includes("missing") ? "red" : s.includes("returned") || s.includes("rejected") ? "red" : "yellow";
+          const awaitingDean = (r?.approvals?.dean || "pending") === "pending" && qReportApprovalChain(r, programme).filter((step) => step.name !== "Dean").every((step) => step.status === "approved");
           return `
             <div class="rounded-2xl border border-slate-200 p-4">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -164,9 +176,15 @@ function reportsSection(reports = []) {
                   <div class="mt-1 text-xs text-slate-600">Submitted: ${escapeHtml(formatDate(r?.submittedAt || r?.date))}</div>
                 </div>
                 <div class="shrink-0">
-                  ${approvalChain(r?.approvalChain)}
+                  ${approvalChain(qReportApprovalChain(r, programme))}
                 </div>
               </div>
+              ${awaitingDean ? `
+                <div class="mt-3 flex gap-2">
+                  <button data-report-act="approved" data-report-id="${escapeHtml(r?.id || "")}" class="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">Approve as Dean</button>
+                  <button data-report-act="returned" data-report-id="${escapeHtml(r?.id || "")}" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Return</button>
+                </div>
+              ` : ""}
             </div>
           `;
         }).join("") : `<div class="text-sm text-slate-600">No quarterly reports returned by the API.</div>`}
@@ -357,17 +375,16 @@ function directorActionsModal({ studentId, studentName, currentStage }) {
             </div>
             <div class="mt-3 flex gap-2">
               <button data-act="saveStage" class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">Apply stage</button>
-              <button data-act="resetStage" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Reset to Application</button>
+              <button data-act="resetStage" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Reset to Coursework</button>
             </div>
           </div>
 
           <div class="rounded-2xl border border-slate-200 bg-white p-4">
             <div class="text-sm font-semibold">Supervisor control</div>
-            <div class="mt-1 text-xs text-slate-500">Assign/replace Sup1, Sup2, Sup3 (override supported)</div>
+            <div class="mt-1 text-xs text-slate-500">Assign or add the missing supervisor. Leave a field blank to keep the current one.</div>
             <div class="mt-3 grid grid-cols-1 gap-2">
-              <input id="sup1" placeholder="Sup1 (staff id/email)" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
-              <input id="sup2" placeholder="Sup2 (optional)" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
-              <input id="sup3" placeholder="Sup3 (PhD optional)" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
+              <input id="sup1" placeholder="Sup1 (staff id/email) - optional if already assigned" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
+              <input id="sup2" placeholder="Sup2 (staff id/email) - optional if already assigned" class="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" />
               <label class="flex items-center gap-2 text-xs text-slate-700">
                 <input id="supOverride" type="checkbox" class="h-4 w-4" />
                 Emergency override
@@ -418,12 +435,12 @@ function directorActionsModal({ studentId, studentName, currentStage }) {
       if (action === "resetStage") {
         const ok = await confirmModal({
           title: "Reset stage",
-          message: `Reset ${studentName} back to Application?`,
+          message: `Reset ${studentName} back to Coursework?`,
           confirmText: "Reset",
           tone: "yellow",
         });
         if (!ok) return;
-        await api.updateStudentStage(studentId, { stage: "Application", mode: "return", reason: "Reset by Director" });
+        await api.updateStudentStage(studentId, { stage: "Coursework", mode: "return", reason: "Reset by Director" });
         toast("Stage reset", { tone: "yellow" });
         modal.close();
         await load();
@@ -432,7 +449,6 @@ function directorActionsModal({ studentId, studentName, currentStage }) {
       if (action === "saveSup") {
         const sup1 = modal.qs("#sup1")?.value?.trim() || "";
         const sup2 = modal.qs("#sup2")?.value?.trim() || "";
-        const sup3 = modal.qs("#sup3")?.value?.trim() || "";
         const override = !!modal.qs("#supOverride")?.checked;
         const ok = await confirmModal({
           title: "Assign supervisors",
@@ -441,7 +457,7 @@ function directorActionsModal({ studentId, studentName, currentStage }) {
           tone: override ? "yellow" : "blue",
         });
         if (!ok) return;
-        await api.assignSupervisors(studentId, { sup1, sup2, sup3, override });
+        await api.assignSupervisors(studentId, { sup1, sup2, override });
         toast("Supervisors assigned", { tone: "green" });
         modal.close();
         await load();
@@ -583,7 +599,7 @@ async function load() {
     const raw = await api.getStudentDetails(id);
     const s = normalizeDetails(raw);
 
-    const currentStage = s?.currentStage || s?.stage || "Application";
+    const currentStage = s?.currentStage || s?.stage || "Coursework";
     setPageMeta({ title: "Student profile", subtitle: `${s?.department || "INFOCOMS"} • governance • approvals • compliance` });
 
     setPageContent(`
@@ -593,7 +609,7 @@ async function load() {
         ${timeline(currentStage)}
         ${supervisorsSection(s?.supervisors || s?.supervision || [])}
         ${documentsSection(s?.documents || s?.requirements || {})}
-        ${reportsSection(s?.quarterlyReports || s?.reports || [])}
+        ${reportsSection(s?.quarterlyReports || s?.reports || [], s?.programme || s?.program || "masters")}
         ${correctionsSection(s?.corrections || {})}
         ${finalStagesSection(s?.finalStages || s?.thesisDefense || {})}
       </div>
@@ -610,6 +626,27 @@ async function load() {
           s?.name || s?.fullName || `${s?.firstName || ""} ${s?.lastName || ""}`.trim() || "Student";
         directorActionsModal({ studentId, studentName, currentStage });
       });
+      root.addEventListener("click", async (e) => {
+        const b = e.target?.closest?.("button[data-report-id]");
+        if (!b) return;
+        const action = b.dataset.reportAct;
+        const reportId = b.dataset.reportId;
+        if (!action || !reportId) return;
+
+        try {
+          const comment = action === "returned"
+            ? (window.prompt("Reason for returning this quarterly report:") || "").trim()
+            : "";
+          if (action === "returned" && !comment) return;
+          await api.reviewQuarterlyReport(id, reportId, { action, comment });
+          toast(action === "approved" ? "Quarterly report approved" : "Quarterly report returned", {
+            tone: action === "approved" ? "green" : "yellow",
+          });
+          load();
+        } catch (err) {
+          toast(err?.message || "Failed to review quarterly report", { tone: "red" });
+        }
+      });
     }
   } catch (e) {
     console.error(e);
@@ -625,5 +662,4 @@ async function load() {
 }
 
 load();
-
 

@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seminar Chair Dashboard – Postgraduate Assessment System</title>
   <link rel="stylesheet" href="style.css" />
-      <link rel="icon" href="../assets/ru1.png"">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="icon" href="../assets/ru1.png">
 </head>
 <body>
 
@@ -15,23 +16,27 @@
       <span></span><span></span><span></span>
     </button>
     <div class="topnav-brand">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-      </svg>
-      <span class="brand-full">Postgraduate Assessment System</span>
-      <span class="brand-short">PG Assessment</span>
-      <span class="sub hide-mobile">/ Panel Dashboard</span>
+      <img src="../assets/ru1.png" alt="RU Branding" style="width:38px; height:38px; object-fit:contain; border-radius:4px; border:1px solid rgba(0,0,0,0.1);">
+      <span class="brand-full">PG</span>
+      <span class="brand-short">PG</span>
+      <span class="sub hide-mobile">/ Panel Board</span>
     </div>
   </div>
   <div class="topnav-right">
-    <span class="role-badge hide-mobile">Seminar Chair</span>
+    <a href="../supervisor_dashboard/index.html" class="back-btn" title="Return to Supervisor View" style="text-decoration:none; display:flex; align-items:center; gap:6px; border:1px solid rgba(30,41,59,0.3); color:#1e293b; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.2s;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Go Back
+    </a>
+    <span class="role-badge hide-mobile" id="userRole">Board Moderator</span>
     <button class="notif-btn" title="Notifications" id="notifBtn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
       <span class="notif-dot" id="notifDot"></span>
     </button>
-    <div class="avatar">SC</div>
+    <div class="avatar" id="userAvatar">U</div>
   </div>
 </nav>
 
@@ -116,6 +121,7 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               <span id="studentStage">Stage 3: Proposal Dept.</span>
             </span>
+            <span class="role-badge" id="myRoleBadge" style="margin-left:auto; background:var(--blue-light); color:var(--blue); padding:2px 8px; border-radius:12px; font-size:10px; font-weight:800; border:1px solid var(--blue);">PANEL MEMBER</span>
           </div>
         </div>
       </div>
@@ -148,6 +154,33 @@
                   <div class="score-bar-track"><div class="score-bar-fill" id="barMeth" style="width:0%"></div></div>
                   <span id="methPct">0%</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rubric-section">
+            <div class="rubric-section-title">Problem Statement & Objectives <span style="font-size:11px;font-weight:500;opacity:.7;">(Pass/Fail Gate)</span></div>
+            <div class="rubric-criteria">
+              <div class="criterion">
+                <div class="criterion-head">
+                  <span class="criterion-name">Problem Statement Clarity</span>
+                  <span class="criterion-weight">Slider · /10</span>
+                </div>
+                <div class="slider-row">
+                  <input type="range" min="0" max="10" value="0" id="s_prob" oninput="calcScore()" />
+                  <span class="slider-val" id="v_prob">0</span>
+                </div>
+              </div>
+              <div class="criterion">
+                <div class="criterion-head">
+                  <span class="criterion-name">Research Objectives & Questions</span>
+                  <span class="criterion-weight">Slider · /10</span>
+                </div>
+                <div class="slider-row">
+                  <input type="range" min="0" max="10" value="0" id="s_obj" oninput="calcScore()" />
+                  <span class="slider-val" id="v_obj">0</span>
+                </div>
+                <textarea class="comment-area" placeholder="Comment on objectives alignment…" rows="2"></textarea>
               </div>
             </div>
           </div>
@@ -244,6 +277,47 @@
             </div>
           </div>
 
+          <div class="rubric-section">
+            <div class="rubric-section-title">Defense & Presentation <span style="font-size:11px;font-weight:500;opacity:.7;">(Oral Component)</span></div>
+            <div class="rubric-criteria">
+              <div class="criterion">
+                <div class="criterion-head">
+                  <span class="criterion-name">Presentation Quality & Defense</span>
+                  <span class="criterion-weight">Slider · /10</span>
+                </div>
+                <div class="slider-row">
+                  <input type="range" min="0" max="10" value="0" id="s_pres" oninput="calcScore()" />
+                  <span class="slider-val" id="v_pres">0</span>
+                </div>
+                <textarea class="comment-area" placeholder="Comment on oral defense performance…" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="rubric-section">
+            <div class="rubric-section-title">Structured Feedback Summary</div>
+            <div class="rubric-criteria">
+              <div class="criterion">
+                <div class="criterion-head">
+                  <span class="criterion-name">Critical Issues (Blocking)</span>
+                </div>
+                <textarea class="comment-area" id="crit_issues" placeholder="Major flaws that MUST be addressed before approval..." rows="3" style="border-color: #fee2e2;"></textarea>
+              </div>
+              <div class="criterion">
+                <div class="criterion-head">
+                  <span class="criterion-name">Minor Issues (Corrections)</span>
+                </div>
+                <textarea class="comment-area" id="minor_issues" placeholder="Typographical errors, minor formatting, etc..." rows="2"></textarea>
+              </div>
+              <div class="criterion">
+                <div class="criterion-head">
+                  <span class="criterion-name">Recommendations & Remarks</span>
+                </div>
+                <textarea class="comment-area" id="recom_remarks" placeholder="General advice for the next stage..." rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+
           <div class="section-divider">Recommendation</div>
           <div class="verdict-row">
             <span class="verdict-label">Recommend:</span>
@@ -266,76 +340,41 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="aiPortalCard">
         <div class="card-header">
           <h2>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            AI Transcript &amp; Corrections Portal
+            AI Transcript Assistant
           </h2>
+          <button class="btn-secondary" onclick="resetChat()" style="padding: 4px 10px; font-size: 11px;">
+            Reset Chat
+          </button>
         </div>
-        <div class="card-body">
-
-          <div class="upload-zone" id="uploadZone">
-            <input type="file" accept=".txt,.pdf,.mp3,.wav,.m4a,.docx" onchange="handleUpload(event)" />
-            <div class="upload-icon">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <div class="card-body" style="padding: 0;">
+          <div class="chat-window" id="chatWindow">
+            <!-- Initial Upload Message -->
+            <div class="chat-bubble ai">
+              Hello! I'm your AI assistant. Please upload the seminar transcript to begin the analysis.
             </div>
-            <h4>Upload Seminar Transcript</h4>
-            <p>Drag &amp; drop or click to select your transcript or audio recording</p>
-            <div class="upload-formats">
-              <span class="fmt-badge">.TXT</span>
-              <span class="fmt-badge">.PDF</span>
-              <span class="fmt-badge">.DOCX</span>
-              <span class="fmt-badge">.MP3</span>
-              <span class="fmt-badge">.WAV</span>
-            </div>
-          </div>
-          <div class="upload-status" id="uploadStatus">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <span id="uploadStatusText">File uploaded and processed by AI.</span>
-          </div>
 
-          <div id="correctionsSection" style="display:none;">
-            <div class="section-divider">AI-Extracted Corrections</div>
-
-            <div class="urgency-group">
-              <div class="urgency-header critical">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                Critical
-                <span class="urgency-count">2 corrections</span>
+            <div class="upload-zone" id="uploadZone" style="margin: 10px; border-style: dotted;">
+              <input type="file" accept=".txt,.pdf,.mp3,.wav,.m4a,.docx" onchange="handleUpload(event)" />
+              <div class="upload-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
               </div>
-              <div id="corrections-critical"></div>
-            </div>
-
-            <div class="urgency-group">
-              <div class="urgency-header major">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                Major
-                <span class="urgency-count">3 corrections</span>
-              </div>
-              <div id="corrections-major"></div>
-            </div>
-
-            <div class="urgency-group">
-              <div class="urgency-header minor">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                Minor
-                <span class="urgency-count">2 corrections</span>
-              </div>
-              <div id="corrections-minor"></div>
-            </div>
-
-            <div class="publish-bar">
-              <div>
-                <h4>Ready to Publish Validated Corrections?</h4>
-                <p id="publishSummary">Review all corrections before publishing to student portal.</p>
-              </div>
-              <button class="btn-publish" onclick="publishCorrections()">
-                Publish to Student →
-              </button>
+              <p style="font-size: 12px;">Click or drag transcript here</p>
             </div>
           </div>
 
+          <div class="publish-bar" id="publishBar" style="display:none; border-radius: 0; margin-top: 0;">
+            <div style="flex: 1;">
+              <h4 style="font-size: 13px;">Review complete?</h4>
+              <p style="font-size: 11px;">Finalize all approved corrections.</p>
+            </div>
+            <button class="btn-publish" onclick="publishCorrections()" style="padding: 8px 16px;">
+              Finalize & Publish
+            </button>
+          </div>
         </div>
       </div>
     </div></main>
