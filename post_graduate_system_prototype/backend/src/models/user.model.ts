@@ -118,6 +118,26 @@ export interface IUser {
     updatedAt?: Date;
     status?: string;
   };
+  conceptNoteWorkflow?: {
+    subStage: string; // "slot_booking" | "awaiting_panel" | "document_upload" | "panel_review" | "completed"
+    bookingRequestedAt?: Date;
+    preferredDate?: string;
+    preferredTime?: string;
+    venue?: string;
+    additionalNotes?: string;
+    panelScheduledDate?: Date;
+    panelMembers?: string[];
+    uploadedFileUrl?: string;
+    uploadedFileName?: string;
+    uploadedAt?: Date;
+    panelScore?: number;
+    panelFeedback?: string;
+    panelDecision?: string; // "pass" | "corrections" | "reject"
+    correctionsList?: string[];
+    reviewedAt?: Date;
+    completedAt?: Date;
+    attemptCount?: number;
+  };
 }
 
 //  Schema
@@ -307,6 +327,26 @@ const UserSchema = new Schema<IUser>({
     submittedAt: Date,
     updatedAt: Date,
     status: { type: String, default: "draft" },
+  },
+  conceptNoteWorkflow: {
+    subStage: { type: String, default: "slot_booking" },
+    bookingRequestedAt: Date,
+    preferredDate: String,
+    preferredTime: String,
+    venue: String,
+    additionalNotes: String,
+    panelScheduledDate: Date,
+    panelMembers: { type: [String], default: [] },
+    uploadedFileUrl: String,
+    uploadedFileName: String,
+    uploadedAt: Date,
+    panelScore: { type: Number, default: 0 },
+    panelFeedback: String,
+    panelDecision: String,
+    correctionsList: { type: [String], default: [] },
+    reviewedAt: Date,
+    completedAt: Date,
+    attemptCount: { type: Number, default: 0 },
   },
 }, { timestamps: true });
 

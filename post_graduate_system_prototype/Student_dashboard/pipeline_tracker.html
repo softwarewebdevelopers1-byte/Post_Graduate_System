@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipeline Tracker | Postgraduate System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    #2a2d3e;
+      --muted:     #6b7280;
+      --text:      #e2e8f0;
+      --sub:       #94a3b8;
+      --blue:      #3b82f6;
+      --blue-glow: rgba(59,130,246,.15);
+      --green:     #10b981;
+      --green-glow:rgba(16,185,129,.15);
+      --amber:     #f59e0b;
+      --amber-glow:rgba(245,158,11,.15);
+      --red:       #ef4444;
+      --red-glow:  rgba(239,68,68,.15);
+      --purple:    #8b5cf6;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .page {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      font-size: .85rem;
+      color: var(--sub);
+      margin-bottom: 32px;
+    }
+
+    /* ── MAIN STAGES ─────────────────────────────────────────── */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .p-stage {
+      display: flex;
+      gap: 16px;
+      position: relative;
+    }
+
+    /* Connector line between stages */
+    .p-stage:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 44px;
+      bottom: -16px;
+      width: 2px;
+      background: var(--border);
+    }
+    .p-stage.completed::after  { background: var(--green); }
+    .p-stage.active::after     { background: linear-gradient(to bottom, var(--blue), var(--border)); }
+
+    /* Stage dot */
+    .p-dot {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: .9rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      z-index: 1;
+      margin-top: 4px;
+    }
+    .p-stage.completed .p-dot {
+      background: var(--green-glow);
+      border-color: var(--green);
+      color: var(--green);
+    }
+    .p-stage.active .p-dot {
+      background: var(--blue-glow);
+      border-color: var(--blue);
+      color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+    }
+    .p-stage.locked .p-dot {
+      opacity: .5;
+    }
+
+    /* Stage card */
+    .p-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      transition: border-color .2s;
+    }
+    .p-stage.active .p-card {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px var(--blue), 0 4px 24px var(--blue-glow);
+    }
+    .p-stage.completed .p-card { border-color: var(--green); }
+
+    .p-label {
+      font-size: .95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .p-badge {
+      font-size: .65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .badge-done    { background: var(--green-glow); color: var(--green); }
+    .badge-active  { background: var(--blue-glow);  color: var(--blue);  }
+    .badge-locked  { background: var(--border);      color: var(--muted); }
+
+    .p-desc {
+      font-size: .8rem;
+      color: var(--sub);
+      margin-top: 4px;
+    }
+
+    /* ── SUB-STEP TIMELINE (Concept Note) ───────────────────── */
+    .substeps {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .ss-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      position: relative;
+    }
+    .ss-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 28px;
+      bottom: -12px;
+      width: 2px;
+      background: var(--border);
+    }
+    .ss-row.ss-done::after  { background: var(--green); }
+    .ss-row.ss-active::after{ background: linear-gradient(to bottom, var(--blue), var(--border)); }
+
+    .ss-dot {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      display: grid;
+      place-items: center;
+      font-size: .6rem;
+      margin-top: 2px;
+    }
+    .ss-row.ss-done   .ss-dot { border-color: var(--green); background: var(--green-glow); color: var(--green); }
+    .ss-row.ss-active .ss-dot { border-color: var(--blue);  background: var(--blue-glow);  color: var(--blue); animation: pulse 1.8s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+    }
+
+    .ss-body { flex: 1; padding-bottom: 16px; }
+    .ss-title {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .ss-row.ss-locked .ss-title { color: var(--muted); }
+    .ss-row.ss-done .ss-title   { color: var(--green); }
+    .ss-row.ss-active .ss-title { color: var(--blue); }
+    .ss-note { font-size: .73rem; color: var(--sub); margin-top: 2px; }
+
+    /* ── ACTION AREA ─────────────────────────────────────────── */
+    .action-box {
+      margin-top: 12px;
+      background: rgba(59,130,246,.07);
+      border: 1px solid var(--blue);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .action-box.warn {
+      background: var(--amber-glow);
+      border-color: var(--amber);
+    }
+    .action-box.success {
+      background: var(--green-glow);
+      border-color: var(--green);
+    }
+    .action-box.danger {
+      background: var(--red-glow);
+      border-color: var(--red);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .form-row.one { grid-template-columns: 1fr; }
+    @media (max-width: 540px) { .form-row { grid-template-columns: 1fr; } }
+
+    label { font-size: .75rem; color: var(--sub); display: block; margin-bottom: 4px; }
+
+    input[type=date], input[type=text], select, textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: .82rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+    textarea { resize: vertical; min-height: 70px; }
+
+    .btn {
+      margin-top: 12px;
+      padding: 9px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: .82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-upload  { background: var(--purple); color: #fff; }
+
+    /* ── CORRECTIONS LIST ─────────────────────────────────────── */
+    .corrections-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .corr-item {
+      font-size: .75rem;
+      background: rgba(239,68,68,.06);
+      border-left: 3px solid var(--red);
+      padding: 6px 10px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+
+    /* ── NOTIFICATIONS ───────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 18px; border-radius: 10px;
+      font-size: .82rem; font-weight: 600;
+      z-index: 9999; opacity: 0; pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .3s, transform .3s;
+    }
+    .toast.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .toast.success { background: var(--green); color: #fff; }
+    .toast.error   { background: var(--red); color: #fff; }
+    .toast.info    { background: var(--blue); color: #fff; }
+
+    .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--muted); font-size: .9rem; gap: 10px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="page-title">📊 Postgraduate Journey Pipeline</div>
+  <div class="page-sub">Track your progress through each stage of the programme</div>
+
+  <div id="root"><div class="loading"><div class="spinner"></div> Loading your pipeline…</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="pipeline_tracker.js"></script>
+</body>
+</html>

@@ -15,6 +15,7 @@ import { SeminarSlotRouter } from "./api/seminar.slots.js";
 import { reportRouter } from "./api/report.routes.js";
 import { settingsRouter } from "./api/settings.routes.js";
 import { PanelRouter } from "./api/panel.routes.js";
+import { ConceptNoteRouter } from "./api/concept-note.routes.js";
 dotenv.config();
 let app = express();
 
@@ -58,6 +59,8 @@ app.use("/api", reportRouter);
 app.use("/api", settingsRouter);
 // panel routes
 app.use("/api", PanelRouter);
+// concept note workflow routes
+app.use("/api", ConceptNoteRouter);
 // handling unknown route
 app.use((req: Request, res: Response): void => {
   res.status(500).json({ message: "No route found" });

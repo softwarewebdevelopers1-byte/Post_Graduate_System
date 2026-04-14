@@ -126,6 +126,26 @@ PanelRouter.post("/panels", async (req: Request, res: Response) => {
 
     await Promise.all(memberPromises);
 
+    // ── Concept Note Workflow: advance sub-stage to "document_upload" ──────────
+    const cnStages = ["Concept Note (Department)", "Concept Note (School)"];
+    if (cnStages.includes(stage)) {
+      const stud = await UserModel.findById(studentId);
+      if (stud) {
+        const subStage = stud.conceptNoteWorkflow?.subStage;
+        // Only advance if student is at awaiting_panel (slot booking done)
+        if (!subStage || subStage === "awaiting_panel" || subStage === "slot_booking") {
+          stud.conceptNoteWorkflow = {
+            ...(stud.conceptNoteWorkflow || {}),
+            subStage: "document_upload",
+            panelScheduledDate: new Date(scheduledDate),
+            panelMembers: panelists.map((p: any) => p.email || p.userId || ""),
+          } as any;
+          stud.markModified("conceptNoteWorkflow");
+          await stud.save();
+        }
+      }
+    }
+
     res.status(201).json({ message: "Panel created successfully with formal roles", panelEvent });
   } catch (error) {
     res.status(500).json({ message: "Error creating panel", error });
@@ -629,17 +649,63 @@ async function aggregatePanelResults(panelId: any) {
 
   // 5. TRIGGER SYSTEM INTEGRATION
   const panelEvent = await PanelEventModel.findById(panelId);
-  if (panelEvent && finalVerdict === "pass") {
+  if (panelEvent) {
     const student = await UserModel.findById(panelEvent.studentId);
     if (student) {
-      const currentIdx = STAGES.indexOf(student.stage || "Coursework");
-      if (currentIdx !== -1 && currentIdx < STAGES.length - 1) {
-        const nextStage = STAGES[currentIdx + 1];
-        if (nextStage) {
-          student.stage = nextStage;
-          await student.save();
+      const cnStages = ["Concept Note (Department)", "Concept Note (School)"];
+      const isConceptNote = cnStages.includes(student.stage || "");
+
+      if (finalVerdict === "pass") {
+        // Advance pipeline stage
+        const currentIdx = STAGES.indexOf(student.stage || "Coursework");
+        if (currentIdx !== -1 && currentIdx < STAGES.length - 1) {
+          const nextStage = STAGES[currentIdx + 1];
+          if (nextStage) student.stage = nextStage;
+        }
+        // Mark concept note workflow as completed
+        if (isConceptNote) {
+          student.conceptNoteWorkflow = {
+            ...(student.conceptNoteWorkflow || {}),
+            subStage: "completed",
+            panelDecision: "pass",
+            panelScore: averageScore,
+            reviewedAt: new Date(),
+            completedAt: new Date(),
+          } as any;
+          student.documents = student.documents || {} as any;
+          student.documents!.conceptNote = "approved";
+          student.markModified("documents");
+        }
+      } else {
+        // Revise — loop student back to document_upload
+        if (isConceptNote) {
+          const prevAttempts = student.conceptNoteWorkflow?.attemptCount ?? 0;
+          student.conceptNoteWorkflow = {
+            ...(student.conceptNoteWorkflow || {}),
+            subStage: "document_upload",
+            panelDecision: "corrections",
+            panelScore: averageScore,
+            panelFeedback: summaryFeedback.critical.join(" | ") || "Revisions required.",
+            correctionsList: [
+              ...summaryFeedback.critical,
+              ...summaryFeedback.minor,
+              ...summaryFeedback.recommendations,
+            ].flat().filter(Boolean),
+            reviewedAt: new Date(),
+            attemptCount: prevAttempts + 1,
+            // Reset upload fields so student can re-upload
+            uploadedFileUrl: undefined,
+            uploadedFileName: undefined,
+            uploadedAt: undefined,
+          } as any;
+          student.documents = student.documents || {} as any;
+          student.documents!.conceptNote = "corrections_required";
+          student.markModified("documents");
         }
       }
+
+      student.markModified("conceptNoteWorkflow");
+      await student.save();
     }
   }
 }

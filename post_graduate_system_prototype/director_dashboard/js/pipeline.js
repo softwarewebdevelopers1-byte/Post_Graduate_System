@@ -231,6 +231,13 @@ function wireDirectorActions() {
     const studentName = btn.dataset.studentName || "Student";
     const currentStage = btn.dataset.studentStage || "";
 
+    // Pre-fetch Concept Note workflow status if applicable
+    const CN_STAGES = ["Concept Note (Department)", "Concept Note (School)"];
+    let cnWorkflow = null;
+    if (CN_STAGES.includes(currentStage)) {
+      try { cnWorkflow = (await api.getConceptNoteStatus(studentId))?.workflow; } catch {}
+    }
+
     const stageOptions = STAGES.map((s) => `<option value="${escapeHtml(s)}" ${s === currentStage ? "selected" : ""}>${escapeHtml(s)}</option>`).join("");
 
     const modal = openModal({
@@ -283,19 +290,6 @@ function wireDirectorActions() {
                 <label class="flex items-center gap-2 text-xs text-slate-700">
                   <input id="supOverride" type="checkbox" class="h-4 w-4" />
                   Emergency override
-                </label>
-              </div>
-              <div class="mt-3">
-                <button data-act="saveSup" class="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">Assign supervisors</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-slate-200 bg-white p-4">
-            <div class="text-sm font-semibold">Notes / interventions</div>
-            <div class="mt-1 text-xs text-slate-500">Add Director notes and trigger reminders</div>
-            <div class="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-2">
-              <textarea id="note" rows="3" class="lg:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-400" placeholder="Write an intervention note (audit trail)…"></textarea>
               <div class="space-y-2">
                 <button data-act="saveNote" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Save note</button>
                 <button data-act="forceChain" class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 transition">Force approval chain complete</button>
@@ -362,6 +356,38 @@ function wireDirectorActions() {
           if (!ok) return;
           await api.assignSupervisors(studentId, { sup1, sup2, override });
           toast("Supervisors assigned", { tone: "green" });
+          modal.close();
+          await load();
+          return;
+        }
+
+        if (act === "scheduleCNPanel") {
+          const scheduledDate = modal.qs("#cn-panel-date")?.value;
+          const membersRaw   = modal.qs("#cn-panel-members")?.value?.trim() || "";
+          const chairEmail   = modal.qs("#cn-chair-email")?.value?.trim() || "";
+          if (!scheduledDate) { toast("Please set a presentation date.", { tone: "red" }); return; }
+          if (!membersRaw)    { toast("Enter at least 3 panel member emails.", { tone: "red" }); return; }
+          const memberEmails = membersRaw.split(",").map(e => e.trim()).filter(Boolean);
+          if (memberEmails.length < 3) { toast("Panels require a minimum of 3 members.", { tone: "red" }); return; }
+          const panelists = memberEmails.map(email => ({ email, type: "internal" }));
+          const ok = await confirmModal({
+            title: "Schedule Concept Note Panel",
+            message: `Schedule panel for ${studentName} on ${new Date(scheduledDate).toLocaleString()}?`,
+            confirmText: "Schedule",
+            tone: "blue",
+          });
+          if (!ok) return;
+          a.disabled = true;
+          a.textContent = "⏳ Scheduling…";
+          await api.scheduleConceptNotePanel({
+            studentId,
+            stage: currentStage,
+            scheduledDate,
+            panelists,
+            chairEmail,
+            createdBy: "Director",
+          });
+          toast(`Panel scheduled for ${studentName}. Student notified to upload concept note.`, { tone: "green" });
           modal.close();
           await load();
           return;

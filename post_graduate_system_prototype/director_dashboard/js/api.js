@@ -243,6 +243,18 @@ export const api = {
       body: { memberId }
     });
   },
+
+  // Concept Note Workflow
+  async getConceptNoteStatus(studentId) {
+    return request(`/concept-note/${encodeURIComponent(studentId)}/status`);
+  },
+  async scheduleConceptNotePanel(payload) {
+    // Uses the existing /panels endpoint — which now auto-updates conceptNoteWorkflow
+    return request("/panels", {
+      method: "POST",
+      body: payload,
+    });
+  },
 };
 
 export { API_BASE };
