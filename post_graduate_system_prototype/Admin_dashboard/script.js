@@ -5,35 +5,23 @@ const API_URL = 'http://localhost:5000/api';
 let students = [];
 
 const STAGES = [
-    "Coursework",
-    "Concept Note (Department)",
-    "Concept Note (School)",
-    "Proposal (Department)",
-    "Proposal (School)",
-    "PG School Approval",
-    "Fieldwork / NACOSTI",
-    "Thesis Draft (Department)",
-    "Thesis Draft (School)",
-    "External Examination Submission",
-    "Under External Examination",
-    "Final Defence",
-    "Graduation Clearance",
+    "Application",
+    "Concept Note",
+    "Proposal",
+    "Research Progress",
+    "Thesis Submission",
+    "Defense",
+    "Graduation",
 ];
 
 const stageMap = {
-    'Coursework': 'Stage 1 — Registration & Induction',
-    'Concept Note (Department)': 'Stage 2 — Concept Paper (Dept)',
-    'Concept Note (School)': 'Stage 3 — Concept Paper (School)',
-    'Proposal (Department)': 'Stage 4 — Proposal Defence (Dept)',
-    'Proposal (School)': 'Stage 5 — Proposal Defence (School)',
-    'PG School Approval': 'Stage 6 — PG Approval & Clearance',
-    'Fieldwork / NACOSTI': 'Stage 7 — NACOSTI & Field Work',
-    'Thesis Draft (Department)': 'Stage 8 — Thesis Writing (Dept)',
-    'Thesis Draft (School)': 'Stage 9 — Thesis Writing (School)',
-    'External Examination Submission': 'Stage 10 — External Submission',
-    'Under External Examination': 'Stage 11 — External Review',
-    'Final Defence': 'Stage 12 — Viva Voce / Defense',
-    'Graduation Clearance': 'Stage 13 — Graduation Clearance'
+    'Application': 'Stage 1 - Application',
+    'Concept Note': 'Stage 2 - Concept Note Booking & Submission',
+    'Proposal': 'Stage 3 - Proposal Development & Approval',
+    'Research Progress': 'Stage 4 - Research Progress Tracking',
+    'Thesis Submission': 'Stage 5 - Thesis Submission',
+    'Defense': 'Stage 6 - Defense (Viva)',
+    'Graduation': 'Stage 7 - Graduation Clearance'
 };
 
 const titles = {
@@ -67,7 +55,7 @@ async function fetchStudents() {
             id: s.userNumber.toUpperCase(),
             prog: s.programme === 'phd' ? 'PhD' : (s.programme === 'masters' ? 'Masters' : s.programme),
             dept: s.department.toUpperCase(),
-            stage: s.stage || 'Coursework',
+            stage: s.stage || 'Application',
             full: stageMap[s.stage] || s.stage || 'Stage 1 — Registration & Induction',
             days: calculateDays(s.updatedAt || s.createdAt),
             status: (s.status || 'Active').toLowerCase(),
@@ -540,3 +528,4 @@ function updateKPICards() {
   checkAuth();
   fetchStudents();
   fetchCalendarSlots();
+

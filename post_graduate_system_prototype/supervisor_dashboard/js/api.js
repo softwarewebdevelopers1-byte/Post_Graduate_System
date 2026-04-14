@@ -65,6 +65,13 @@ export const api = {
     return request(`/students/${encodeURIComponent(studentId)}/qreports`);
   },
 
+  async reviewDeferral(studentId, { supervisorId, action, comment } = {}) {
+    return request(`/students/${encodeURIComponent(studentId)}/deferral/review`, {
+      method: "POST",
+      body: { supervisorId, action, comment }
+    });
+  },
+
   // Analytics & Automation
   async getAnalytics(supervisorId) {
     return request(`/supervisor/${encodeURIComponent(supervisorId)}/analytics`);

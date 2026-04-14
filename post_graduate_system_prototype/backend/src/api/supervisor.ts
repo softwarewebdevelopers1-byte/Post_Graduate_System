@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { UserModel } from "../models/user.model.js";
+import jwt from "jsonwebtoken";
 
 export const SupervisorRouter = Router();
 
@@ -149,6 +150,106 @@ SupervisorRouter.get("/students/:id/qreports", async (req: Request, res: Respons
   }
 });
 
+// Student requests deferral
+SupervisorRouter.post("/students/:id/deferral/request", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason, plannedResumption } = req.body;
+    const accessToken = req.cookies?.userToken;
+    const jwtSecret = process.env.JWT_SECRET;
+
+    if (!accessToken || !jwtSecret) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    const decoded: any = jwt.verify(accessToken, jwtSecret);
+    if (decoded.id !== id && decoded.role !== "director" && decoded.role !== "admin") {
+      return res.status(403).json({ message: "You can only request deferral for your own profile" });
+    }
+
+    const student = await UserModel.findById(id);
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    if (student.status === "Deferred") {
+      return res.status(400).json({ message: "Student is already deferred" });
+    }
+
+    if (student.deferralInfo?.requestStatus === "pending") {
+      return res.status(400).json({ message: "A deferral request is already pending review" });
+    }
+
+    student.deferralInfo = {
+      ...(student.deferralInfo || {}),
+      reason: reason || "Student requested deferral",
+      plannedResumption: plannedResumption || "",
+      requestStatus: "pending",
+      requestedAt: new Date(),
+      reviewedBy: "",
+      supervisorComment: "",
+      stageAtDeferral: student.stage || "Application",
+    };
+
+    await student.save();
+    res.json({ message: "Deferral request submitted for supervisor review", student });
+  } catch (error) {
+    res.status(500).json({ message: "Error submitting deferral request", error });
+  }
+});
+
+// Supervisor approves or rejects deferral request
+SupervisorRouter.post("/students/:id/deferral/review", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { supervisorId, action, comment } = req.body; // approved | rejected
+
+    const student = await UserModel.findById(id);
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const assignedSupervisorIds = [
+      student.supervisors?.sup1,
+      student.supervisors?.sup2,
+      student.supervisors?.sup3,
+    ].filter(Boolean);
+
+    if (!assignedSupervisorIds.includes(supervisorId)) {
+      return res.status(403).json({ message: "Supervisor not assigned to this student" });
+    }
+
+    if (student.deferralInfo?.requestStatus !== "pending") {
+      return res.status(400).json({ message: "There is no pending deferral request to review" });
+    }
+
+    const isApproved = action === "approved";
+    const nextDeferralInfo: NonNullable<typeof student.deferralInfo> = {
+      ...(student.deferralInfo || {}),
+      requestStatus: isApproved ? "approved" : "rejected",
+      reviewedAt: new Date(),
+      reviewedBy: supervisorId,
+      supervisorComment: comment || "",
+      stageAtDeferral: student.deferralInfo?.stageAtDeferral || student.stage || "Application",
+    };
+
+    if (isApproved) {
+      nextDeferralInfo.date = new Date();
+    }
+
+    student.deferralInfo = nextDeferralInfo;
+
+    if (isApproved) {
+      student.status = "Deferred";
+    } else if (student.status === "Deferred") {
+      student.status = "Resumed";
+    } else {
+      student.status = "Active";
+    }
+
+    await student.save();
+    res.json({ message: `Deferral request ${action}`, student });
+  } catch (error) {
+    res.status(500).json({ message: "Error reviewing deferral request", error });
+  }
+});
+
 // 6. Analytics: Workload & Bottlenecks
 SupervisorRouter.get("/supervisor/:id/analytics", async (req: Request, res: Response) => {
   try {
@@ -165,7 +266,7 @@ SupervisorRouter.get("/supervisor/:id/analytics", async (req: Request, res: Resp
     const analytics = {
       totalManaged: students.length,
       stageDistribution: students.reduce((acc: any, s) => {
-        acc[s.stage || "Coursework"] = (acc[s.stage || "Coursework"] || 0) + 1;
+        acc[s.stage || "Application"] = (acc[s.stage || "Application"] || 0) + 1;
         return acc;
       }, {}),
       bottlenecks: students.filter(s => s.atRisk).length,
@@ -220,32 +321,32 @@ SupervisorRouter.post("/students/:id/automation/suggest", async (req: Request, r
 
     const settings = await SystemSettingsModel.findOne();
     const STAGES = [
-      "Coursework", "Concept Note (Department)", "Concept Note (School)", 
-      "Proposal (Department)", "Proposal (School)", "PG Approval", 
-      "Fieldwork", "Thesis Development", "External Examination", "Defense", "Graduation"
+      "Application", "Concept Note", "Proposal", "Research Progress", "Thesis Submission", "Defense", "Graduation"
     ];
 
-    const currentStageIdx = STAGES.indexOf(student.stage || "Coursework");
+    const currentStageIdx = STAGES.indexOf(student.stage || "Application");
     let suggestedStage = student.stage;
     let aiFlags = [];
 
     const score = student.documents?.proposalScore || 0;
     const threshold = settings?.minProposalScore || 60;
-    if (student.stage === "Proposal (School)" && score < threshold) {
+    if (student.stage === "Proposal" && score < threshold) {
        aiFlags.push(`Warning: Proposal score below required ${threshold}% threshold.`);
     }
 
     // 2. Lifecycle Stage Access Rules
-    if (settings?.autoCourseworkCompletion && student.stage === "Coursework" && student.financialClearance) {
-      suggestedStage = "Concept Note (Department)";
-      aiFlags.push("Auto-advancing: Coursework verified + Financial clearance detected.");
+    if (settings?.autoCourseworkCompletion && student.stage === "Application" && student.financialClearance) {
+      suggestedStage = "Concept Note";
+      aiFlags.push("Auto-advancing: application clearance verified and student may begin concept note work.");
     }
 
     // Standard progression suggestions based on document status
-    if (student.stage === "Concept Note (Department)" && student.documents?.conceptNote === "approved") {
-      suggestedStage = "Concept Note (School)";
-    } else if (student.stage === "Proposal (Department)" && student.documents?.proposal === "approved") {
-      suggestedStage = "Proposal (School)";
+    if (student.stage === "Concept Note" && student.documents?.conceptNote === "approved") {
+      suggestedStage = "Proposal";
+    } else if (student.stage === "Proposal" && student.documents?.proposal === "approved") {
+      suggestedStage = "Research Progress";
+    } else if (student.stage === "Research Progress" && student.quarterlyReports?.some(r => r.status === "approved")) {
+      suggestedStage = "Thesis Submission";
     }
 
     // Check for bottlenecks
@@ -266,3 +367,4 @@ SupervisorRouter.post("/students/:id/automation/suggest", async (req: Request, r
     res.status(500).json({ message: "Error running automation check", error });
   }
 });
+

@@ -73,6 +73,10 @@ export async function handleIsLogged(
               userNumber: user.userNumber,
               role: user.role,
               supervisors: user.supervisors,
+              status: user.status,
+              stage: user.stage,
+              financialClearance: user.financialClearance,
+              deferralInfo: user.deferralInfo,
               token: token,
             },
           });

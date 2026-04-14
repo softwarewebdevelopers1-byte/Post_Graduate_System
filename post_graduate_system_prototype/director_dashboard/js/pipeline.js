@@ -115,7 +115,7 @@ function render({ columns, totals }) {
           <div>
             <div class="text-xl font-bold tracking-tight text-slate-900">Global Pipeline Command</div>
             <div class="mt-1 text-xs text-slate-500 font-medium tracking-wide uppercase">
-              Coursework → Concept Note → Proposal → PG Approval → Fieldwork → Thesis → Defense → Graduation
+              Application → Concept Note → Proposal → Research Progress → Thesis Submission → Defense → Graduation
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
@@ -441,4 +441,5 @@ function wireDirectorActions() {
     });
   });
 }
+
 

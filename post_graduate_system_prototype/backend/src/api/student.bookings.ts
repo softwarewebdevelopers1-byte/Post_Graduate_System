@@ -38,6 +38,15 @@ studentBookings.post(
           return;
         }
         try {
+          const student = await UserModel.findById(load.id).select("status");
+          if (student?.status === "Deferred") {
+            res.status(403).json({
+              success: false,
+              message: "Presentation and defense booking is paused while the student is deferred",
+            });
+            return;
+          }
+
           // Check if there is already a pending booking
           const pendingBooking = await bookingsModel.findOne({
             ownerId: load.id,
@@ -187,7 +196,7 @@ studentBookings.get(
                 studentId: student._id,
                 name: student.fullName,
                 regNo: student.userNumber,
-                stage: student.stage || "Coursework",
+                stage: student.stage || "Application",
                 programme: student.programme,
                 department: student.department,
                 studentStatus: student.status,
@@ -455,3 +464,4 @@ studentBookings.put(
     );
   },
 );
+

@@ -23,7 +23,7 @@ export async function initStudentDetails(studentId) {
 
 function renderStudentDetail(student, supervisorId) {
   const root = qs("#student-detail-root");
-  const stageIndex = STAGES.indexOf(student.stage || "Coursework");
+  const stageIndex = STAGES.indexOf(student.stage || "Application");
   const progressPercent = Math.round(((stageIndex + 1) / STAGES.length) * 100);
 
   root.innerHTML = `
@@ -47,7 +47,7 @@ function renderStudentDetail(student, supervisorId) {
       <div class="card mb-8">
         <div class="card-header">
           <div><div class="card-title">10-Gate Research Pipeline</div><div class="card-sub">Tracking candidate progression</div></div>
-          <span class="badge badge-active">Currently: ${student.stage || "Coursework"}</span>
+          <span class="badge badge-active">Currently: ${student.stage || "Application"}</span>
         </div>
         <div class="phase-label">Phase 1 — Foundation (Stages 1–5)</div>
         <div class="pipeline-track mb-8">${renderPipelineSegment(0, 5, stageIndex)}</div>
@@ -68,6 +68,7 @@ function renderStudentDetail(student, supervisorId) {
                <div class="card-title" style="margin-bottom:12px;">Quarterly Progress Reports</div>
                <div style="display:flex; flex-direction:column; gap:10px;">${renderReports(student.quarterlyReports)}</div>
             </div>
+            ${renderDeferralCard(student)}
             <div class="card">
                <div class="card-title" style="margin-bottom:12px;">Conditions for Next Gate</div>
                <div style="display:flex; flex-direction:column; gap:8px;">
@@ -140,6 +141,35 @@ function renderReports(reports = []) {
   `).join('');
 }
 
+function renderDeferralCard(student) {
+  const status = student?.deferralInfo?.requestStatus;
+  if (!status) return "";
+
+  const tone = status === "pending" ? "badge-pending" : status === "approved" ? "badge-deferred" : "badge-active";
+  const actions = status === "pending" ? `
+      <div class="flex-row mt-4" style="gap:10px;">
+        <button class="btn btn-primary btn-sm btn-approve-deferral">Approve Deferral</button>
+        <button class="btn btn-outline btn-sm btn-reject-deferral">Reject Request</button>
+      </div>
+    ` : "";
+
+  return `
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:10px;">
+        <div class="card-title">Deferral Request</div>
+        <span class="badge ${tone}" style="font-size:0.68rem;">${status}</span>
+      </div>
+      <div class="text-xs text-muted" style="line-height:1.8;">
+        <div><strong>Reason:</strong> ${escapeHtml(student?.deferralInfo?.reason || "Not provided")}</div>
+        <div><strong>Planned Return:</strong> ${escapeHtml(student?.deferralInfo?.plannedResumption || "Not provided")}</div>
+        <div><strong>Requested At:</strong> ${student?.deferralInfo?.requestedAt ? new Date(student.deferralInfo.requestedAt).toLocaleString() : "N/A"}</div>
+        ${student?.deferralInfo?.supervisorComment ? `<div><strong>Comment:</strong> ${escapeHtml(student.deferralInfo.supervisorComment)}</div>` : ""}
+      </div>
+      ${actions}
+    </div>
+  `;
+}
+
 function renderCorrections(corrections = []) {
   if (!corrections.length) return `<div class="p-8 text-center text-muted font-bold text-xs uppercase">No corrections found</div>`;
   return corrections.map(c => `
@@ -152,6 +182,8 @@ function renderCorrections(corrections = []) {
 
 function setupDetailEvents(student) {
   qsa(".btn-action-center").forEach(btn => { btn.onclick = () => openActionCenter(student); });
+  qs(".btn-approve-deferral")?.addEventListener("click", () => openDeferralReviewModal(student, "approved"));
+  qs(".btn-reject-deferral")?.addEventListener("click", () => openDeferralReviewModal(student, "rejected"));
 
   qs(".btn-run-ai")?.addEventListener("click", async () => {
      toast("AI Engine: Scanning Research Draft...", { tone: "blue" });
@@ -163,6 +195,35 @@ function setupDetailEvents(student) {
   });
 
   qsa(".btn-review-report").forEach(btn => { btn.onclick = () => openReportApprovalModal(student, btn.dataset.id); });
+}
+
+function openDeferralReviewModal(student, action) {
+  const session = getSupervisorSession();
+  openModal({
+    title: action === "approved" ? "Approve Deferral Request" : "Reject Deferral Request",
+    bodyHtml: `<div style="display:flex; flex-direction:column; gap:16px;">
+      <p class="text-sm">Review the deferral request for <strong>${student.fullName}</strong>.</p>
+      <textarea id="deferral-comment" class="form-textarea" placeholder="Supervisor comment..."></textarea>
+    </div>`,
+    footerHtml: `
+      <button class="btn btn-outline" onclick="this.closest('.modal-overlay').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" id="btn-submit-deferral-review">${action === "approved" ? "Approve" : "Reject"}</button>
+    `
+  });
+
+  qs("#btn-submit-deferral-review").onclick = async () => {
+    try {
+      await api.reviewDeferral(student._id, {
+        supervisorId: session.id,
+        action,
+        comment: qs("#deferral-comment")?.value || "",
+      });
+      toast(`Deferral ${action}`, { tone: "green" });
+      initStudentDetails(student._id);
+    } catch (e) {
+      toast("Error: " + e.message, { tone: "red" });
+    }
+  };
 }
 
 function openReportApprovalModal(student, reportId) {
@@ -189,7 +250,7 @@ function openReportApprovalModal(student, reportId) {
 }
 
 function openActionCenter(student) {
-   const currentStage = (student.stage || "Coursework").toLowerCase();
+   const currentStage = (student.stage || "Application").toLowerCase();
    // Simple mapping for stage gate vs document
    let technicalStage = "conceptNote";
    if (currentStage.includes("proposal")) technicalStage = "proposal";
@@ -216,3 +277,4 @@ function openActionCenter(student) {
       } catch(e) { toast("Error: " + e.message, { tone: "red" }); }
    };
 }
+

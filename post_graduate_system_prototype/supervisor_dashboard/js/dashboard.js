@@ -55,7 +55,7 @@ function renderDashboard(students, supervisorId) {
 function renderStudentRow(student, supervisorId) {
   const slot = student.supervisors?.sup1 === supervisorId ? "sup1" : (student.supervisors?.sup2 === supervisorId ? "sup2" : "sup3");
   const isPending = student.assignmentStatus?.[slot] === "pending";
-  const stageIndex = STAGES.indexOf(student.stage || "Coursework");
+  const stageIndex = STAGES.indexOf(student.stage || "Application");
   const progressPercent = Math.round(((stageIndex + 1) / STAGES.length) * 100);
   const healthBadge = student.status === "Active" ? "badge-active" : "badge-deferred";
 
@@ -80,7 +80,7 @@ function renderStudentRow(student, supervisorId) {
             <span class="text-[10px] font-bold text-navy">${progressPercent}%</span>
          </div>
       </td>
-      <td class="text-xs font-bold text-navy uppercase">${student.stage || "Coursework"}</td>
+      <td class="text-xs font-bold text-navy uppercase">${student.stage || "Application"}</td>
       <td><span class="badge ${healthBadge}">● ${student.status}</span></td>
       <td style="padding-right:32px; text-align:right;">
          <div class="flex items-center justify-end gap-2">
@@ -120,3 +120,4 @@ async function handleAssignment(studentId, supervisorId, action) {
     initDashboard();
   } catch (err) { toast(`Error: ${err.message}`, { tone: "red" }); }
 }
+

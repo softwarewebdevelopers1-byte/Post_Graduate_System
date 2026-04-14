@@ -357,7 +357,7 @@ function directorActionsModal({ studentId, studentName, currentStage }) {
             </div>
             <div class="mt-3 flex gap-2">
               <button data-act="saveStage" class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">Apply stage</button>
-              <button data-act="resetStage" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Reset to Coursework</button>
+              <button data-act="resetStage" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 transition">Reset to Application</button>
             </div>
           </div>
 
@@ -418,12 +418,12 @@ function directorActionsModal({ studentId, studentName, currentStage }) {
       if (action === "resetStage") {
         const ok = await confirmModal({
           title: "Reset stage",
-          message: `Reset ${studentName} back to Coursework?`,
+          message: `Reset ${studentName} back to Application?`,
           confirmText: "Reset",
           tone: "yellow",
         });
         if (!ok) return;
-        await api.updateStudentStage(studentId, { stage: "Coursework", mode: "return", reason: "Reset by Director" });
+        await api.updateStudentStage(studentId, { stage: "Application", mode: "return", reason: "Reset by Director" });
         toast("Stage reset", { tone: "yellow" });
         modal.close();
         await load();
@@ -583,7 +583,7 @@ async function load() {
     const raw = await api.getStudentDetails(id);
     const s = normalizeDetails(raw);
 
-    const currentStage = s?.currentStage || s?.stage || "Coursework";
+    const currentStage = s?.currentStage || s?.stage || "Application";
     setPageMeta({ title: "Student profile", subtitle: `${s?.department || "INFOCOMS"} • governance • approvals • compliance` });
 
     setPageContent(`
@@ -625,4 +625,5 @@ async function load() {
 }
 
 load();
+
 

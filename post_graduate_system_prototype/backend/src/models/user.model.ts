@@ -20,6 +20,11 @@ export interface IUser {
     actualResumption?: Date;
     reason?: string;
     stageAtDeferral?: string;
+    requestStatus?: string;
+    requestedAt?: Date;
+    reviewedAt?: Date;
+    reviewedBy?: string;
+    supervisorComment?: string;
   };
   supervisors?: {
     sup1?: string;
@@ -118,7 +123,7 @@ const UserSchema = new Schema<IUser>({
   },
   stage: {
     type: String,
-    default: "Coursework",
+    default: "Application",
   },
   atRisk: {
     type: Boolean,
@@ -138,6 +143,11 @@ const UserSchema = new Schema<IUser>({
     actualResumption: Date,
     reason: String,
     stageAtDeferral: String,
+    requestStatus: { type: String, default: "" },
+    requestedAt: Date,
+    reviewedAt: Date,
+    reviewedBy: String,
+    supervisorComment: String,
   },
   supervisors: {
     sup1: { type: String, default: "" },

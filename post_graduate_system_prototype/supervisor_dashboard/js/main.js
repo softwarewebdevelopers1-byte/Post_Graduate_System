@@ -4,9 +4,13 @@ export const qsa = (s) => document.querySelectorAll(s);
 
 // Global State
 export const STAGES = [
-  "Coursework", "Concept Note (Department)", "Concept Note (School)", 
-  "Proposal (Department)", "Proposal (School)", "PG Approval", 
-  "Fieldwork", "Thesis Development", "External Examination", "Defense", "Graduation"
+  "Application",
+  "Concept Note",
+  "Proposal",
+  "Research Progress",
+  "Thesis Submission",
+  "Defense",
+  "Graduation"
 ];
 
 // ---------------------------------------------------------

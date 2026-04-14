@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== QUARTERLY REPORTS HANDLER =====
   class QuarterlyReportsHandler {
     constructor() {
-      this.apiBaseUrl = 'https://post-graduate-system-prototype.onrender.com/api';
+      this.apiBaseUrl = 'http://localhost:5000/api';
       this.initializeEventListeners();
       this.loadReportHistory();
     }
@@ -453,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== PRESENTATION BOOKING HANDLER =====
   class PresentationBookingHandler {
     constructor() {
-      this.apiBaseUrl = 'https://post-graduate-system-prototype.onrender.com/api';
+      this.apiBaseUrl = 'http://localhost:5000/api';
       this.initializeEventListeners();
       this.loadAndDisplayBookings();
     }
@@ -786,7 +786,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const userData = JSON.parse(localStorage.getItem('postgraduate_user'));
       if (!userData) { alert('Please login to cancel booking'); return; }
-      const response = await fetch(`https://post-graduate-system-prototype.onrender.com/api/presentations/${bookingId}/cancel`, {
+      const response = await fetch(`http://localhost:5000/api/presentations/${bookingId}/cancel`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include'
       });
       const result = await response.json();
@@ -833,7 +833,7 @@ document.addEventListener("DOMContentLoaded", () => {
       logoutBtn.disabled = true;
     }
     try {
-      const response = await fetch('https://post-graduate-system-prototype.onrender.com/api/user/login/logout', {
+      const response = await fetch('http://localhost:5000/api/user/login/logout', {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
@@ -899,7 +899,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const result = await fetch("https://post-graduate-system-prototype.onrender.com/api/islogged", {
+      const result = await fetch("http://localhost:5000/api/islogged", {
         method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "Accept": "application/json" }
       });
 
@@ -928,6 +928,10 @@ document.addEventListener("DOMContentLoaded", () => {
             userNumber: responseData.user.userNumber || responseData.user.studentId || responseData.user.id,
             role: responseData.user.role || "student",
             supervisor: responseData.user.supervisor || null,
+            status: responseData.user.status || "Active",
+            stage: responseData.user.stage || responseData.user.currentStage || "",
+            financialClearance: Boolean(responseData.user.financialClearance),
+            deferralInfo: responseData.user.deferralInfo || {},
             email: responseData.user.email,
             token: responseData.token || null,
             lastLogin: new Date().toISOString()
@@ -943,6 +947,10 @@ document.addEventListener("DOMContentLoaded", () => {
             userNumber: responseData.userNumber || responseData.id,
             role: responseData.role || "student",
             supervisor: responseData.supervisor || null,
+            status: responseData.status || "Active",
+            stage: responseData.stage || responseData.currentStage || "",
+            financialClearance: Boolean(responseData.financialClearance),
+            deferralInfo: responseData.deferralInfo || {},
             email: responseData.email,
             token: responseData.token || null,
             lastLogin: new Date().toISOString()
@@ -986,53 +994,255 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ===== STATE =====
+    const totalStages = 7;
+    const STUDENT_API_BASE = "http://localhost:5000/api";
     let currentStatus = 'ACTIVE';
-    const statuses = ['ACTIVE', 'DEFERRED', 'RESUMED', 'GRADUATED'];
-    let currentStage = 3;
+    let currentStage = 1;
     let clearanceGranted = false;
     let reportSubmitted = false;
+    let currentDeferralInfo = {};
 
     const stageData = [
-      { label: 'Admission &\nEnrolment', phase: 1, approver: 'Registry', next: 'Complete orientation' },
-      { label: 'Concept Paper\nApproval', phase: 1, approver: 'Supervisor + School Board', next: 'Submit proposal draft' },
-      { label: 'Data Collection\n& Fieldwork', phase: 1, approver: 'Supervisor + Dean', next: 'Submit Progress Report Q3' },
-      { label: 'Proposal\nDefence', phase: 1, approver: 'Proposal Panel', next: 'Prepare defence presentation' },
-      { label: 'Research\nPermit (NACOSTI)', phase: 1, approver: 'NACOSTI Board', next: 'Upload NACOSTI docs' },
-      { label: 'Data Analysis\n& Write-up', phase: 2, approver: 'Supervisor', next: 'Submit draft thesis chapters' },
-      { label: 'Internal\nSeminar', phase: 2, approver: 'School Seminar Panel', next: 'Register for seminar' },
-      { label: 'Thesis\nSubmission', phase: 2, approver: 'SGS Dean + Finance', next: 'Upload thesis documents' },
-      { label: 'Oral Examination\n(Viva)', phase: 2, approver: 'External Examiners', next: 'Book viva date' },
-      { label: 'Graduation\n& Conferment', phase: 2, approver: 'Senate', next: 'Apply for graduation' },
+      { key: 'Application', label: 'Application\nStage', phase: 1, approver: 'Admin + Director', next: 'Application is reviewed and approved' },
+      { key: 'Concept Note', label: 'Concept Note\nBooking & Submission', phase: 1, approver: 'Panel + Admin', next: 'Book a presentation slot and upload concept note' },
+      { key: 'Proposal', label: 'Proposal\nDevelopment & Approval', phase: 1, approver: 'Supervisor + Director', next: 'Submit proposal, revise, and receive final approval' },
+      { key: 'Research Progress', label: 'Research Progress\nTracking', phase: 2, approver: 'Supervisor', next: 'Submit periodic reports and clear milestones' },
+      { key: 'Thesis Submission', label: 'Thesis\nSubmission', phase: 2, approver: 'Admin + Director', next: 'Upload thesis and await examiner assignment' },
+      { key: 'Defense', label: 'Defense\n(Viva)', phase: 2, approver: 'Panel', next: 'Book defense and receive recorded results' },
+      { key: 'Graduation', label: 'Graduation\nClearance', phase: 2, approver: 'Director + Admin', next: 'Clear final requirements for graduation' },
     ];
 
+    const legacyStageAliases = {
+      'coursework': 'Application',
+      'admission & enrolment': 'Application',
+      'admission and enrolment': 'Application',
+      'application': 'Application',
+      'concept note': 'Concept Note',
+      'concept note (department)': 'Concept Note',
+      'concept note (school)': 'Concept Note',
+      'concept paper approval': 'Concept Note',
+      'proposal': 'Proposal',
+      'proposal (department)': 'Proposal',
+      'proposal (school)': 'Proposal',
+      'proposal defence': 'Proposal',
+      'pg approval': 'Research Progress',
+      'pg school approval': 'Research Progress',
+      'research permit (nacosti)': 'Research Progress',
+      'fieldwork': 'Research Progress',
+      'data collection': 'Research Progress',
+      'data collection & fieldwork': 'Research Progress',
+      'research progress': 'Research Progress',
+      'data analysis & write-up': 'Research Progress',
+      'thesis development': 'Thesis Submission',
+      'draft thesis': 'Thesis Submission',
+      'internal seminar': 'Thesis Submission',
+      'thesis submission': 'Thesis Submission',
+      'notice of submission': 'Thesis Submission',
+      'external examination submission': 'Thesis Submission',
+      'under external examination': 'Thesis Submission',
+      'external examination': 'Thesis Submission',
+      'final thesis': 'Thesis Submission',
+      'oral examination (viva)': 'Defense',
+      'oral examination': 'Defense',
+      'viva': 'Defense',
+      'seminar': 'Defense',
+      'examination': 'Defense',
+      'corrections': 'Defense',
+      'defense': 'Defense',
+      'clearance': 'Graduation',
+      'graduation clearance': 'Graduation',
+      'graduation': 'Graduation',
+      'graduated': 'Graduation',
+    };
+
+    const stageKeyToIndex = stageData.reduce((acc, stage, index) => {
+      acc[stage.key] = index + 1;
+      return acc;
+    }, {});
+
+    function normalizeStatus(rawStatus, normalizedStage) {
+      const value = (rawStatus || '').toString().trim().toLowerCase();
+      if (value === 'deferred' || value === 'study break') return 'DEFERRED';
+      if (value === 'resumed') return 'RESUMED';
+      if (value === 'graduated' || normalizedStage >= totalStages) return 'GRADUATED';
+      return 'ACTIVE';
+    }
+
+    function resolveStageNumber(rawStage) {
+      if (typeof rawStage === 'number' && Number.isFinite(rawStage)) {
+        return Math.min(totalStages, Math.max(1, Math.round(rawStage)));
+      }
+
+      const stageText = (rawStage || '').toString().trim();
+      if (!stageText) return 1;
+
+      if (/^\d+$/.test(stageText)) {
+        return Math.min(totalStages, Math.max(1, Number(stageText)));
+      }
+
+      const normalized = stageText.toLowerCase();
+      const alias = legacyStageAliases[normalized];
+      if (alias && stageKeyToIndex[alias]) return stageKeyToIndex[alias];
+
+      if (stageKeyToIndex[stageText]) return stageKeyToIndex[stageText];
+
+      const fuzzyMatch = stageData.find(stage => normalized.includes(stage.key.toLowerCase()));
+      if (fuzzyMatch) return stageKeyToIndex[fuzzyMatch.key];
+
+      return 1;
+    }
+
+    function hydrateWorkflowState(user = {}) {
+      currentStage = resolveStageNumber(user.stage || user.currentStage || user.stageName);
+      currentStatus = normalizeStatus(user.status, currentStage);
+      clearanceGranted = Boolean(user.financialClearance);
+      currentDeferralInfo = user.deferralInfo || {};
+    }
+
+    hydrateWorkflowState(currentUserData || {});
+
+    function getDeferralRequestState() {
+      return (currentDeferralInfo?.requestStatus || '').toString().toLowerCase();
+    }
+
+    function saveCurrentUserState() {
+      const storedData = {
+        ...(currentUserData || {}),
+        status: currentStatus === 'DEFERRED' ? 'Deferred' : currentStatus === 'RESUMED' ? 'Resumed' : currentStatus === 'GRADUATED' ? 'Graduated' : 'Active',
+        stage: stageData[Math.min(currentStage, totalStages) - 1]?.key || 'Application',
+        financialClearance: clearanceGranted,
+        deferralInfo: currentDeferralInfo || {},
+      };
+      currentUserData = storedData;
+      updateUserStorage(storedData);
+    }
+
+    function setPortalPaused(paused) {
+      const interactiveSelectors = [
+        '#section-reports button',
+        '#section-reports input',
+        '#section-reports select',
+        '#section-reports textarea',
+        '#section-compliance .upload-card',
+        '#section-scheduling button',
+        '#section-scheduling input',
+        '#section-scheduling select',
+        '#section-scheduling textarea',
+        '#section-finance button',
+        '#section-pipeline button',
+      ];
+
+      document.querySelectorAll(interactiveSelectors.join(',')).forEach(el => {
+        if (el.id === 'logout-btn-sidebar' || el.id === 'defer-btn') return;
+        if (paused) {
+          el.dataset.wasPaused = '1';
+          if ('disabled' in el) {
+            el.dataset.prevDisabled = el.disabled ? '1' : '0';
+            el.disabled = true;
+          }
+          el.style.pointerEvents = 'none';
+          el.style.opacity = '0.55';
+        } else if (el.dataset.wasPaused === '1') {
+          if ('disabled' in el) {
+            el.disabled = el.dataset.prevDisabled === '1';
+            delete el.dataset.prevDisabled;
+          }
+          el.style.pointerEvents = '';
+          el.style.opacity = '';
+          delete el.dataset.wasPaused;
+        }
+      });
+    }
+
     const statusConfig = {
-      ACTIVE: { cls: 'badge-active', label: '● ACTIVE', btn: 'btn-danger', btnText: 'Request Deferral', showAlert: false },
-      DEFERRED: { cls: 'badge-deferred', label: '⏸ DEFERRED', btn: 'btn-outline', btnText: 'Request Reinstatement', showAlert: true },
-      RESUMED: { cls: 'badge-resumed', label: '▶ RESUMED', btn: 'btn-danger', btnText: 'Request Deferral', showAlert: false },
-      GRADUATED: { cls: 'badge-graduated', label: '🎓 GRADUATED', btn: 'btn-ghost', btnText: 'View Certificate', showAlert: false },
+      ACTIVE: { cls: 'badge-active', label: 'ACTIVE', btn: 'btn-danger', btnText: 'Request Deferral', showAlert: false },
+      DEFERRED: { cls: 'badge-deferred', label: 'DEFERRED', btn: 'btn-outline', btnText: 'Request Reinstatement', showAlert: true },
+      RESUMED: { cls: 'badge-resumed', label: 'RESUMED', btn: 'btn-danger', btnText: 'Request Deferral', showAlert: false },
+      GRADUATED: { cls: 'badge-graduated', label: 'GRADUATED', btn: 'btn-ghost', btnText: 'View Certificate', showAlert: false },
     };
 
     function updateStatusUI() {
       const cfg = statusConfig[currentStatus];
+      const requestState = getDeferralRequestState();
       ['status-badge', 'status-badge-2'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) { el.className = 'badge ' + cfg.cls; el.textContent = cfg.label; }
+        if (!el) return;
+        el.className = 'badge ' + cfg.cls;
+        el.textContent = currentStatus;
       });
       const btn = document.getElementById('defer-btn');
-      if (btn) { btn.className = 'btn btn-sm ' + cfg.btn; btn.textContent = cfg.btnText; }
+      if (btn) {
+        btn.className = 'btn btn-sm ' + cfg.btn;
+        btn.disabled = false;
+        btn.textContent = cfg.btnText;
+        if (requestState === 'pending') {
+          btn.className = 'btn btn-sm btn-outline';
+          btn.textContent = 'Awaiting Supervisor Decision';
+          btn.disabled = true;
+        } else if (currentStatus === 'DEFERRED') {
+          btn.className = 'btn btn-sm btn-outline';
+          btn.textContent = 'Deferral Active';
+          btn.disabled = true;
+        }
+      }
       const alertEl = document.getElementById('deferral-alert');
-      if (alertEl) alertEl.style.display = cfg.showAlert ? 'block' : 'none';
+      if (alertEl) {
+        const content = alertEl.querySelector('div div');
+        alertEl.style.display = (cfg.showAlert || requestState === 'pending' || requestState === 'rejected') ? 'block' : 'none';
+        if (content && requestState === 'pending') {
+          content.innerHTML = `<strong>Deferral Request Pending</strong><br>Your supervisor has not yet made a decision. Activities remain available until the request is approved.`;
+        } else if (content && requestState === 'rejected') {
+          content.innerHTML = `<strong>Deferral Request Rejected</strong><br>${currentDeferralInfo?.supervisorComment || 'Your supervisor rejected the request. You may submit a new request if circumstances change.'}`;
+        } else if (content && currentStatus === 'DEFERRED') {
+          content.innerHTML = `<strong>Portal Paused - Deferred Status Active</strong><br>Your supervisor approved the deferral. Student activities are paused until the deferral is lifted.`;
+        }
+      }
       const pipelineMsg = document.getElementById('pipeline-locked-msg');
       const gateBtn = document.getElementById('gate-btn');
       if (pipelineMsg && gateBtn) {
         if (currentStatus === 'DEFERRED') { pipelineMsg.style.display = 'flex'; gateBtn.disabled = true; }
-        else { pipelineMsg.style.display = 'none'; gateBtn.disabled = (currentStage > 10); }
+        else { pipelineMsg.style.display = 'none'; gateBtn.disabled = (currentStage >= totalStages); }
       }
+      setPortalPaused(currentStatus === 'DEFERRED');
+      saveCurrentUserState();
     }
 
-    function requestDeferral() {
-      currentStatus = currentStatus === 'DEFERRED' ? 'RESUMED' : 'DEFERRED';
-      updateStatusUI();
+    async function requestDeferral() {
+      if (!currentUserData?.id) {
+        window.alert('Unable to submit deferral request. Please log in again.');
+        return;
+      }
+
+      const reason = window.prompt('Enter the reason for deferral:', currentDeferralInfo?.reason || '');
+      if (!reason || !reason.trim()) return;
+
+      const plannedResumption = window.prompt('Planned resumption semester/date (optional):', currentDeferralInfo?.plannedResumption || '') || '';
+
+      try {
+        const response = await fetch(`${STUDENT_API_BASE}/students/${encodeURIComponent(currentUserData.id)}/deferral/request`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ reason: reason.trim(), plannedResumption: plannedResumption.trim() }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Failed to submit deferral request');
+
+        currentDeferralInfo = result.student?.deferralInfo || {
+          reason: reason.trim(),
+          plannedResumption: plannedResumption.trim(),
+          requestStatus: 'pending',
+        };
+        currentStatus = normalizeStatus(result.student?.status || currentStatus, currentStage);
+        updateStatusUI();
+        window.alert('Deferral request submitted. Your supervisor must approve or reject it.');
+      } catch (error) {
+        window.alert(error.message || 'Failed to submit deferral request');
+      }
     }
 
     function renderPipeline() {
@@ -1040,7 +1250,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const p2El = document.getElementById('pipeline-p2');
       if (!p1El || !p2El) return;
       p1El.innerHTML = ''; p2El.innerHTML = '';
-      for (let i = 1; i <= 10; i++) {
+      for (let i = 1; i <= totalStages; i++) {
         const s = stageData[i - 1];
         let state = i < currentStage ? 'completed' : i === currentStage ? 'active' : 'locked';
         const el = document.createElement('div');
@@ -1049,33 +1259,36 @@ document.addEventListener("DOMContentLoaded", () => {
         if (s.phase === 1) p1El.appendChild(el);
         else p2El.appendChild(el);
       }
-      const pct = Math.round(((currentStage - 1) / 10) * 100);
+      const pct = totalStages === 1 ? 100 : Math.round(((currentStage - 1) / (totalStages - 1)) * 100);
       const progressFill = document.getElementById('pipeline-progress-fill');
       const progressText = document.getElementById('pipeline-progress-text');
       const currentBadge = document.getElementById('pipeline-current-badge');
       const bossStageNum = document.getElementById('boss-stage-num');
       const gateBtn = document.getElementById('gate-btn');
+      const stageMeta = stageData[Math.min(currentStage, totalStages) - 1];
       if (progressFill) progressFill.style.width = pct + '%';
-      if (progressText) progressText.innerHTML = `<strong>Stage ${Math.min(currentStage, 10)} of 10</strong> — ${stageData[Math.min(currentStage, 10) - 1].label.replace('\n', ' ')}`;
-      if (currentBadge) currentBadge.textContent = currentStage > 10 ? '🎓 Completed' : `Stage ${currentStage} — Active`;
-      const sd = stageData[Math.min(currentStage, 10) - 1];
+      if (progressText) progressText.innerHTML = `<strong>Stage ${currentStage} of ${totalStages}</strong> - ${stageMeta.label.replace('\n', ' ')}`;
+      if (currentBadge) currentBadge.textContent = currentStage >= totalStages ? 'Stage 7 - Graduation' : `Stage ${currentStage} - ${stageMeta.key}`;
+      const sd = stageMeta;
       const sdCurrent = document.getElementById('sd-current');
       const sdApprover = document.getElementById('sd-approver');
       const sdPhase = document.getElementById('sd-phase');
       const sdNext = document.getElementById('sd-next');
-      if (sdCurrent) sdCurrent.textContent = `Stage ${Math.min(currentStage, 10)}: ${sd.label.replace('\n', ' ')}`;
+      if (sdCurrent) sdCurrent.textContent = `Stage ${currentStage}: ${sd.label.replace('\n', ' ')}`;
       if (sdApprover) sdApprover.textContent = sd.approver;
-      if (sdPhase) sdPhase.textContent = sd.phase === 1 ? 'Phase 1 — Foundation' : 'Phase 2 — Research & Completion';
+      if (sdPhase) sdPhase.textContent = sd.phase === 1 ? 'Phase 1 - Application, Concept & Proposal' : 'Phase 2 - Research, Examination & Graduation';
       if (sdNext) sdNext.textContent = sd.next;
       if (bossStageNum) bossStageNum.textContent = currentStage;
       checkBossLevel();
-      if (gateBtn) { gateBtn.disabled = (currentStage > 10) || currentStatus === 'DEFERRED'; if (currentStage > 10) gateBtn.textContent = '🎓 All Stages Complete'; }
+      if (gateBtn) { gateBtn.disabled = (currentStage >= totalStages) || currentStatus === 'DEFERRED'; if (currentStage >= totalStages) gateBtn.textContent = 'Graduation Workflow Complete'; }
     }
 
     function advancePipeline() {
-      if (currentStage >= 11 || currentStatus === 'DEFERRED') return;
+      if (currentStage >= totalStages || currentStatus === 'DEFERRED') return;
       currentStage++;
+      if (currentStage >= totalStages) currentStatus = 'GRADUATED';
       renderPipeline();
+      updateStatusUI();
     }
 
     function checkBossLevel() {
@@ -1084,18 +1297,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const icon = document.getElementById('boss-lock-icon');
       const sub = document.getElementById('boss-sub');
       const nacostiBadge = document.getElementById('nacosti-badge');
-      if (currentStage >= 8) {
+      const thesisUnlockStage = 5;
+      if (currentStage >= thesisUnlockStage) {
         if (locked) locked.style.display = 'none';
         if (unlocked) unlocked.style.display = 'block';
-        if (icon) icon.textContent = '🔓';
-        if (sub) sub.textContent = 'Stage 8 Unlocked — Upload all three required documents to proceed';
-        if (nacostiBadge) { nacostiBadge.textContent = '✓'; nacostiBadge.className = 'nav-badge'; }
+        if (icon) icon.textContent = 'Unlocked';
+        if (sub) sub.textContent = 'Thesis Submission stage unlocked - upload all three required documents to proceed';
+        if (nacostiBadge) { nacostiBadge.textContent = 'OK'; nacostiBadge.className = 'nav-badge'; }
       } else {
         if (locked) locked.style.display = 'block';
         if (unlocked) unlocked.style.display = 'none';
-        if (icon) icon.textContent = '🔒';
-        if (sub) sub.innerHTML = `Unlocks at Pipeline Stage 8 — Currently at Stage <span id="boss-stage-num">${currentStage}</span>`;
-        if (nacostiBadge) { nacostiBadge.textContent = 'S8'; nacostiBadge.className = 'nav-badge locked'; }
+        if (icon) icon.textContent = 'Locked';
+        if (sub) sub.innerHTML = `Unlocks at Pipeline Stage ${thesisUnlockStage} - currently at Stage <span id="boss-stage-num">${currentStage}</span>`;
+        if (nacostiBadge) { nacostiBadge.textContent = `S${thesisUnlockStage}`; nacostiBadge.className = 'nav-badge locked'; }
       }
     }
 
@@ -1190,6 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ===== INIT =====
     renderPipeline();
     updateStatusUI();
+    if (clearanceGranted) toggleClearance();
 
     // Initialize handlers
     const bookingHandler = new PresentationBookingHandler();
@@ -1207,3 +1422,4 @@ document.addEventListener("DOMContentLoaded", () => {
     window.toggleClearance = toggleClearance;
   })();
 });
+

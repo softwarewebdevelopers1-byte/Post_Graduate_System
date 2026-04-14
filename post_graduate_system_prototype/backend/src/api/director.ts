@@ -23,7 +23,7 @@ DirectorRouter.get("/dashboard/stats", async (req: Request, res: Response) => {
           .length,
       },
       stageDistribution: students.reduce((acc: any, s) => {
-        const stage = s.stage || "Coursework";
+        const stage = s.stage || "Application";
         acc[stage] = (acc[stage] || 0) + 1;
         return acc;
       }, {}),
@@ -89,25 +89,24 @@ DirectorRouter.post(
         (r) => r.status === "approved",
       ).length;
 
-      // Block Proposal (School) if no reports
-      if (stage === "Proposal (School)" && approvedReports === 0) {
+      // Block research progress unless reporting has started
+      if (stage === "Research Progress" && approvedReports === 0) {
         return res
           .status(403)
           .json({
             message:
-              "Quarterly report required before School Proposal presentation.",
+              "At least one approved progress report is required before Research Progress can be confirmed.",
           });
       }
 
-      // Block External Examination Submission if not ALL reports approved
-      if (stage === "External Examination Submission") {
+      // Block thesis submission until progress reporting is mature
+      if (stage === "Thesis Submission") {
         if (approvedReports < 2) {
-          // Masters Year 2 needs at least 2 reports according to Sem 3/4 mapping.
           return res
             .status(403)
             .json({
               message:
-                "All quarterly reports must be approved before External Examination Submission.",
+                "At least two approved progress reports are required before Thesis Submission.",
             });
         }
       }
@@ -142,7 +141,7 @@ DirectorRouter.post(
           date: new Date(),
           reason: reason || "Administrative",
           plannedResumption,
-          stageAtDeferral: student.stage || "Coursework",
+          stageAtDeferral: student.stage || "Application",
         };
       } else if (status === "Resumed") {
         update["deferralInfo.actualResumption"] = new Date();
@@ -305,28 +304,24 @@ DirectorRouter.post(
       const settings = await SystemSettingsModel.findOne();
       if (settings?.supervisorLockdown) {
         const STAGES = [
-          "Coursework",
-          "Concept Note (Department)",
-          "Concept Note (School)",
-          "Proposal (Department)",
-          "Proposal (School)",
-          "PG Approval",
-          "Fieldwork",
-          "Thesis Development",
-          "External Examination",
+          "Application",
+          "Concept Note",
+          "Proposal",
+          "Research Progress",
+          "Thesis Submission",
           "Defense",
           "Graduation",
         ];
         const currentStageIdx = STAGES.indexOf(
-          studentToUpdate.stage || "Coursework",
+          studentToUpdate.stage || "Application",
         );
-        const fieldworkIdx = STAGES.indexOf("Fieldwork");
+        const researchIdx = STAGES.indexOf("Research Progress");
 
-        if (currentStageIdx > fieldworkIdx) {
+        if (currentStageIdx > researchIdx) {
           return res
             .status(403)
             .json({
-              message: "Supervisor assignment locked after Fieldwork stage.",
+              message: "Supervisor assignment locked after Research Progress stage.",
             });
         }
       }
@@ -375,7 +370,7 @@ DirectorRouter.get("/pipeline", async (req: Request, res: Response) => {
       id: s._id,
       name: s.fullName,
       regNo: s.userNumber,
-      stage: s.stage || "Coursework",
+      stage: s.stage || "Application",
       atRisk: s.atRisk,
       department: s.department,
     }));
@@ -770,3 +765,4 @@ DirectorRouter.get("/supervisors", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching supervisors", error });
   }
 });
+
